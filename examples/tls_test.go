@@ -20,9 +20,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11"
-	pb "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/grpc"
-	"github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/util"
+	"github.com/IBM-Cloud/hpcs-grep11-go/ep11"
+	pb "github.com/IBM-Cloud/hpcs-grep11-go/grpc"
+	"github.com/IBM-Cloud/hpcs-grep11-go/util"
 	grpc "google.golang.org/grpc"
 )
 
@@ -62,6 +62,7 @@ func createECDSASelfSignedCert(privKey *util.EP11PrivateKey, commonName string, 
 		},
 		NotBefore: time.Now(),
 		NotAfter:  time.Now().Add(time.Hour * 24 * 180),
+		DNSNames:  []string{"localhost"},
 	}
 
 	certDERBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, privKey.Public(), privKey)

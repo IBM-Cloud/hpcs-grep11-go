@@ -24,9 +24,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/IBM-Cloud/hpcs-grep11-go/ep11"
+	pb "github.com/IBM-Cloud/hpcs-grep11-go/grpc"
 	"github.com/golang/protobuf/proto"
-	"github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11"
-	pb "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/grpc"
 	"google.golang.org/grpc/status"
 )
 

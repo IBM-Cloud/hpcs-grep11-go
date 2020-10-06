@@ -31,6 +31,12 @@ type Return uint64
 
 type EP11Attributes map[Attribute]interface{}
 
+// Deprecated: here for backwards compatibility for []byte attributes
+type AttributeStruct struct {
+	Type  Attribute
+	Value []byte
+}
+
 const (
 	XCP_ADM_ADMIN_LOGIN         AdminCommand = 0x00000001
 	XCP_ADM_DOM_ADMIN_LOGIN     AdminCommand = 0x00000002
@@ -209,8 +215,9 @@ const (
 	CKA_IBM_PQC_PARAMS                Attribute = CKA_VENDOR_DEFINED + 0x1000e
 	CKA_IBM_WIRETEST                  Attribute = CKA_VENDOR_DEFINED + 0x20001
 	CKA_VENDOR_DEFINED_GREP11         Attribute = CKA_VENDOR_DEFINED + 0x40000
-	CKA_GREP11_RAW_KEYBLOB            Attribute = CKA_VENDOR_DEFINED_GREP11 + 0x1
-	CKA_GREP11_VOTE_VERSION           Attribute = CKA_VENDOR_DEFINED_GREP11 + 0x2
+	CKA_GREP11_TOKEN_LABEL            Attribute = CKA_VENDOR_DEFINED_GREP11 + 0x1
+	CKA_GREP11_RAW_KEYBLOB            Attribute = CKA_VENDOR_DEFINED_GREP11 + 0x2
+	CKA_GREP11_VOTE_VERSION           Attribute = CKA_VENDOR_DEFINED_GREP11 + 0x3
 
 	XCP_ADMP_WK_IMPORT         CardAttributeFlags = 0x00000001
 	XCP_ADMP_WK_EXPORT         CardAttributeFlags = 0x00000002
@@ -762,6 +769,7 @@ const (
 	CKM_IBM_WIRETEST                   Mechanism = CKM_VENDOR_DEFINED + 0x30004
 	CKM_IBM_RETAINKEY                  Mechanism = CKM_VENDOR_DEFINED + 0x40001
 	CKM_IBM_CPACF_WRAP                 Mechanism = CKM_VENDOR_DEFINED + 0x60001
+	CKM_IBM_BTC_DERIVE                 Mechanism = CKM_VENDOR_DEFINED + 0x70001
 
 	CKF_DONT_BLOCK                     MechanismInfoFlag = 0x00000001
 	CKF_HW                             MechanismInfoFlag = 0x00000001
@@ -1204,6 +1212,7 @@ var (
 		"CKA_IBM_PQC_PARAMS":                CKA_IBM_PQC_PARAMS,
 		"CKA_IBM_WIRETEST":                  CKA_IBM_WIRETEST,
 		"CKA_VENDOR_DEFINED_GREP11":         CKA_VENDOR_DEFINED_GREP11,
+		"CKA_GREP11_TOKEN_LABEL":            CKA_GREP11_TOKEN_LABEL,
 		"CKA_GREP11_RAW_KEYBLOB":            CKA_GREP11_RAW_KEYBLOB,
 		"CKA_GREP11_VOTE_VERSION":           CKA_GREP11_VOTE_VERSION,
 	}
@@ -1329,6 +1338,7 @@ var (
 		CKA_IBM_PQC_PARAMS:                "CKA_IBM_PQC_PARAMS",
 		CKA_IBM_WIRETEST:                  "CKA_IBM_WIRETEST",
 		CKA_VENDOR_DEFINED_GREP11:         "CKA_VENDOR_DEFINED_GREP11",
+		CKA_GREP11_TOKEN_LABEL:            "CKA_GREP11_TOKEN_LABEL",
 		CKA_GREP11_RAW_KEYBLOB:            "CKA_GREP11_RAW_KEYBLOB",
 		CKA_GREP11_VOTE_VERSION:           "CKA_GREP11_VOTE_VERSION",
 	}
@@ -2074,6 +2084,7 @@ var (
 		"CKM_IBM_WIRETEST":                   CKM_IBM_WIRETEST,
 		"CKM_IBM_RETAINKEY":                  CKM_IBM_RETAINKEY,
 		"CKM_IBM_CPACF_WRAP":                 CKM_IBM_CPACF_WRAP,
+		"CKM_IBM_BTC_DERIVE":                 CKM_IBM_BTC_DERIVE,
 	}
 	MechanismValueToName = map[Mechanism]string{
 		CKM_RSA_PKCS_KEY_PAIR_GEN:          "CKM_RSA_PKCS_KEY_PAIR_GEN",
@@ -2436,6 +2447,7 @@ var (
 		CKM_IBM_WIRETEST:                   "CKM_IBM_WIRETEST",
 		CKM_IBM_RETAINKEY:                  "CKM_IBM_RETAINKEY",
 		CKM_IBM_CPACF_WRAP:                 "CKM_IBM_CPACF_WRAP",
+		CKM_IBM_BTC_DERIVE:                 "CKM_IBM_BTC_DERIVE",
 	}
 	MechanismInfoFlagNameToValue = map[string]MechanismInfoFlag{
 		"CKF_DONT_BLOCK":                     CKF_DONT_BLOCK,

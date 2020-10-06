@@ -12,7 +12,6 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"encoding/asn1"
-	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -20,17 +19,15 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11"
-	pb "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/grpc"
-	"github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/util"
+	"github.com/IBM-Cloud/hpcs-grep11-go/ep11"
+	pb "github.com/IBM-Cloud/hpcs-grep11-go/grpc"
+	"github.com/IBM-Cloud/hpcs-grep11-go/util"
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
 // The following IBM Cloud items need to be changed prior to running the sample program
 const address = "<grep11_server_address>:<port>"
-
-var skip bool
 
 var callOpts = []grpc.DialOption{
 	grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
@@ -39,13 +36,6 @@ var callOpts = []grpc.DialOption{
 		Endpoint: "<https://<iam_ibm_cloud_endpoint>",
 		Instance: "<hpcs_instance_id>",
 	}),
-}
-
-func TestMain(m *testing.M) {
-	flag.BoolVar(&skip, "skip", true, "skip rewrapKeyBlob test")
-	flag.Parse()
-
-	m.Run()
 }
 
 // Example_getMechanismInfo retrieves a mechanism list and retrieves detailed information for the CKM_RSA_PKCS mechanism
@@ -766,23 +756,30 @@ func Example_deriveKey() {
 	// Alice and Bob get the same derived key
 }
 
-// Example_rewrapKeyBlob re-encrypts generated key blobs with the new committed wrapping key that is contained within with the HSM.
+// Test_rewrapKeyBlob re-encrypts generated key blobs with the new committed wrapping key that is contained within the HSM.
 // Keys that have been re-encrypted can only be used (e.g., encrypt, decrypt) after the HSM has been finalized with the new
 // committed wrapping key.
 // See figure 8 on page 27 and page 37 of https://www.ibm.com/downloads/cas/WXRDPRAN for additional information.
-// This example contains two pauses that require the user to type CTRL-c after ensuring that the stated pre-requisite activity
+// This test contains two pauses that require the user to type CTRL-c after ensuring that the stated pre-requisite activity
 // has been completed.  There needs to be coordination with your HPCS cloud service contact in order to place your HSM into the
 // required states.
 
-func Example_rewrapKeyBlob() {
-	if skip {
-		fmt.Printf("Skipping the rewrapKeyBlob test. To enable, use the go test parameter \"-skip=false\"\n")
-		return
-	}
+func Test_rewrapKeyBlob(t *testing.T) {
+	message := `
+ 
+Skipping the rewrapKeyBlob test. To enable, comment out the t.Skipf and message lines within the Test_rewrapKeyBlob test
+
+NOTE: This test contains two pauses that require the user to type CTRL-c after ensuring
+      that the stated pre-requisite activity has been completed.  There needs to be 
+      coordination with your HPCS cloud service contact in order to place your HSM
+      into the required states.
+ 
+`
+	t.Skipf(message)
 
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
-		panic(fmt.Errorf("Could not connect to server: %s", err))
+		t.Fatalf("Could not connect to server: %s", err)
 	}
 	defer conn.Close()
 
@@ -807,10 +804,10 @@ func Example_rewrapKeyBlob() {
 
 	generateKeyResponse, err := cryptoClient.GenerateKey(context.Background(), keygenmsg)
 	if err != nil {
-		panic(fmt.Errorf("GenerateKey Error: %s", err))
+		t.Fatalf("GenerateKey Error: %s", err)
 	}
 
-	fmt.Println("Generated original AES key that will be rewrapped")
+	t.Log("Generated original AES key that will be rewrapped")
 
 	// Encrypt data using generated AES key blob. The encrypted data will be used later in the test
 	// The data will be decrypted by the re-wrapped AES key blob.
@@ -819,7 +816,7 @@ func Example_rewrapKeyBlob() {
 	}
 	rng, err := cryptoClient.GenerateRandom(context.Background(), rngTemplate)
 	if err != nil {
-		panic(fmt.Errorf("GenerateRandom Error: %s", err))
+		t.Fatalf("GenerateRandom Error: %s", err)
 	}
 	iv := rng.Rnd[:ep11.AES_BLOCK_SIZE]
 	plain := []byte("This text will be used to confirm a successful key blob re-encrypt operation")
@@ -832,10 +829,10 @@ func Example_rewrapKeyBlob() {
 
 	origEncryptResponse, err := cryptoClient.EncryptSingle(context.Background(), encryptRequest)
 	if err != nil {
-		panic(fmt.Errorf("Failed EncryptSingle [%s]", err))
+		t.Fatalf("Failed EncryptSingle [%s]", err)
 	}
 
-	fmt.Println("Encrypted message using original wrapped AES key")
+	t.Log("Encrypted message using original wrapped AES key")
 
 	// Call RewrapKeyBlob function
 	rewrapKeyBlobRequest := &pb.RewrapKeyBlobRequest{
@@ -859,11 +856,11 @@ func Example_rewrapKeyBlob() {
 
 	rewrapKeyBlobResponse, err := cryptoClient.RewrapKeyBlob(context.Background(), rewrapKeyBlobRequest)
 	if err != nil {
-		panic(fmt.Errorf("Received error for RewrapKeyBlob operation: %s", err))
+		t.Fatalf("Received error for RewrapKeyBlob operation: %s", err)
 	}
 
-	fmt.Println("RewrapKeyBlob action has completed")
-	fmt.Println("Original wrapped AES key has been rewrapped with the new wrapping key")
+	t.Log("RewrapKeyBlob action has completed")
+	t.Log("Original wrapped AES key has been rewrapped with the new wrapping key")
 
 	// Pause here until domain has been finalized
 	util.Pause(msg, sigs, "Press Ctrl-c after the card has been finalized in order to continue testing the new wrapped key")
@@ -877,10 +874,10 @@ func Example_rewrapKeyBlob() {
 
 	encryptResponse, err := cryptoClient.EncryptSingle(context.Background(), encryptRequest)
 	if err != nil {
-		panic(fmt.Errorf("Failed EncryptSingle [%s]", err))
+		t.Fatalf("Failed EncryptSingle [%s]", err)
 	}
 
-	fmt.Println("Encrypted message using rewrapped AES key")
+	t.Log("Encrypted message using rewrapped AES key")
 
 	// Decrypt data that was encrypted with the new wrapped AES key
 	decryptRequest := &pb.DecryptSingleRequest{
@@ -890,15 +887,15 @@ func Example_rewrapKeyBlob() {
 	}
 	decryptResponse, err := cryptoClient.DecryptSingle(context.Background(), decryptRequest)
 	if err != nil {
-		panic(fmt.Errorf("Failed DecryptSingle using rewrapped AES key [%s]", err))
+		t.Fatalf("Failed DecryptSingle using rewrapped AES key [%s]", err)
 	}
 
 	// Compare decrypted response (using the second wrapping key) with the original plain text
 	if !reflect.DeepEqual(plain, decryptResponse.Plain) {
-		panic(fmt.Errorf("Failed comparing plain text of cipher single using reencrypted AES key"))
+		t.Fatalf("Failed comparing plain text of cipher single using reencrypted AES key")
 	}
 
-	fmt.Println("Successfully decrypted new data with rewrapped AES key")
+	t.Log("Successfully decrypted new data with rewrapped AES key")
 
 	// Decrypt initial data that was encrypted with new wrapping key
 	decryptRequest = &pb.DecryptSingleRequest{
@@ -908,26 +905,13 @@ func Example_rewrapKeyBlob() {
 	}
 	decryptResponse, err = cryptoClient.DecryptSingle(context.Background(), decryptRequest)
 	if err != nil {
-		panic(fmt.Errorf("Failed DecryptSingle using rewrapped AES key [%s]", err))
+		t.Fatalf("Failed DecryptSingle using rewrapped AES key [%s]", err)
 	}
 
 	// Compare decrypted response (using the second wrapping key) with the original plain text
 	if !reflect.DeepEqual(plain, decryptResponse.Plain) {
-		panic(fmt.Errorf("Failed comparing plain text of cipher single using rewrapped AES key"))
+		t.Fatalf("Failed comparing plain text of cipher single using rewrapped AES key")
 	}
 
-	fmt.Println("Successfully decrypted original data with rewrapped AES key")
-
-	return
-
-	// Output:
-	// Generated original AES key that will be rewrapped
-	// Encrypted message using original wrapped AES key
-	//
-	// RewrapKeyBlob action has completed
-	// Original wrapped AES key has been rewrapped with the new wrapping key
-	//
-	// Encrypted message using rewrapped AES key
-	// Successfully decrypted new data with rewrapped AES key
-	// Successfully decrypted original data with rewrapped AES key
+	t.Log("Successfully decrypted original data with rewrapped AES key")
 }

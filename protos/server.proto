@@ -524,8 +524,8 @@ message VerifySingleResponse {
 
 message GenerateKeyRequest {
 	Mechanism Mech = 1;
-	map<uint64,bytes> TemplateBytes = 2 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
-	map<uint64,AttributeValue> Template = 6 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
+	map<uint64,bytes> TemplateBytes = 2 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
+	map<uint64,AttributeValue> Template = 6 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 }
 
 message GenerateKeyResponse {
@@ -536,10 +536,10 @@ message GenerateKeyResponse {
 
 message GenerateKeyPairRequest {
 	Mechanism Mech = 1;
-	map<uint64,bytes> PubKeyTemplateBytes = 2 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
-	map<uint64,bytes> PrivKeyTemplateBytes = 3 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
-	map<uint64,AttributeValue> PrivKeyTemplate = 7 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
-	map<uint64,AttributeValue> PubKeyTemplate = 8 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
+	map<uint64,bytes> PubKeyTemplateBytes = 2 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
+	map<uint64,bytes> PrivKeyTemplateBytes = 3 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
+	map<uint64,AttributeValue> PrivKeyTemplate = 7 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
+	map<uint64,AttributeValue> PubKeyTemplate = 8 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 }
 
 message GenerateKeyPairResponse {
@@ -565,8 +565,8 @@ message UnwrapKeyRequest {
 	bytes KeK = 2;
 	bytes MacKey = 3;
 	Mechanism Mech = 5;
-	map<uint64,bytes> TemplateBytes = 6 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
-	map<uint64,AttributeValue> Template = 9 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
+	map<uint64,bytes> TemplateBytes = 6 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
+	map<uint64,AttributeValue> Template = 9 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 }
 
 message UnwrapKeyResponse {
@@ -577,10 +577,10 @@ message UnwrapKeyResponse {
 
 message DeriveKeyRequest {
 	Mechanism Mech = 1;
-	map<uint64,bytes> TemplateBytes = 2 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
+	map<uint64,bytes> TemplateBytes = 2 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 	bytes BaseKey = 3;
 	bytes Data = 4;
-	map<uint64,AttributeValue> Template = 8 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
+	map<uint64,AttributeValue> Template = 8 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 }
 
 message DeriveKeyResponse {
@@ -593,11 +593,11 @@ message GetMechanismListRequest {
 }
 
 message GetMechanismListResponse {
-	repeated uint64 Mechs = 2 [(gogoproto.casttype) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Mechanism"];
+	repeated uint64 Mechs = 2 [(gogoproto.casttype) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Mechanism"];
 }
 
 message GetMechanismInfoRequest {
-	uint64 Mech = 2 [(gogoproto.casttype) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Mechanism"];
+	uint64 Mech = 2 [(gogoproto.casttype) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Mechanism"];
 }
 
 message GetMechanismInfoResponse {
@@ -606,18 +606,19 @@ message GetMechanismInfoResponse {
 
 message GetAttributeValueRequest {
 	bytes Object = 1;
-	map<uint64,bytes> AttributesBytes = 2 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
-	map<uint64,AttributeValue> Attributes = 3 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
+	map<uint64,bytes> AttributesBytes = 2 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
+	map<uint64,AttributeValue> Attributes = 3 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 }
 
 message GetAttributeValueResponse {
-	map<uint64,bytes> AttributesBytes = 2 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
+	map<uint64,bytes> AttributesBytes = 2 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
+	map<uint64,AttributeValue> Attributes = 4 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 }
 
 message SetAttributeValueRequest {
 	bytes Object = 1;
-	map<uint64,bytes> AttributesBytes = 2 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
-	map<uint64,AttributeValue> Attributes = 3 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
+	map<uint64,bytes> AttributesBytes = 2 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
+	map<uint64,AttributeValue> Attributes = 3 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 }
 
 message SetAttributeValueResponse {
@@ -625,11 +626,13 @@ message SetAttributeValueResponse {
 }
 
 message Mechanism {
-	uint64 Mechanism = 1 [(gogoproto.casttype) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Mechanism"];
+	uint64 Mechanism = 1 [(gogoproto.casttype) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Mechanism"];
 	oneof Parameter {
 		bytes ParameterB = 2;
 		RSAOAEPParm RSAOAEPParameter = 3;
 		RSAPSSParm RSAPSSParameter = 4;
+		ECDH1DeriveParm ECDH1DeriveParameter = 5;
+		BTCDeriveParm BTCDeriveParameter = 6;
 	}
 }
 
@@ -640,13 +643,13 @@ message MechanismInfo {
 }
 
 message Grep11Error {
-	uint64 Code = 1 [(gogoproto.casttype) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Return"];
+	uint64 Code = 1 [(gogoproto.casttype) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Return"];
 	string Detail = 2;
 	bool Retry = 3;
 }
 
 message RSAOAEPParm {
-	uint64 HashMech = 1 [(gogoproto.casttype) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Mechanism"];
+	uint64 HashMech = 1 [(gogoproto.casttype) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Mechanism"];
 	enum Mask {
 		CkgMgf1None   = 0;
 		CkgMgf1Sha1   = 1;
@@ -665,7 +668,7 @@ message RSAOAEPParm {
 }
 
 message RSAPSSParm {
-	uint64 HashMech = 1 [(gogoproto.casttype) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Mechanism"];
+	uint64 HashMech = 1 [(gogoproto.casttype) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Mechanism"];
 	enum Mask {
 		CkgMgf1None   = 0;
 		CkgMgf1Sha1   = 1;
@@ -693,6 +696,24 @@ message ECDH1DeriveParm {
 	KeyDerivationFunction Kdf = 1;
 	bytes SharedData = 2;
 	bytes PublicData = 3;
+}
+
+message BTCDeriveParm {
+        enum BTCDeriveType {
+               CkBIP0032NotUsed = 0;
+               CkBIP0032PRV2PRV = 1;
+               CkBIP0032PRV2PUB = 2;
+               CkBIP0032PUB2PUB = 3;
+               CkBIP0032MASTERK = 4;
+               CkSLIP0010PRV2PRV = 5;
+               CkSLIP0010PRV2PUB = 6;
+               CkSLIP0010PUB2PUB = 7;
+               CkSLIP0010MASTERK = 8;
+        }
+        BTCDeriveType Type = 1;
+        uint64 ChildKeyIndex = 2;                                                
+        bytes ChainCode = 3;                                                     
+        uint64 Version = 4;                                                      
 }
 
 message HMACGeneralParm {
@@ -728,6 +749,6 @@ message KeyBlob {
 	bytes KeyBlobID = 1;   // UUID
 	int64 Version = 2;     // Incrementing version counter ("Lamport timer"), to prevent inter-client races
 	bytes TxID = 3;        // Random 'version', to detect replays on same client
-	map<uint64,AttributeValue> Attributes = 4 [(gogoproto.castkey) = "github.com/ibm-developer/ibm-cloud-hyperprotectcrypto/golang/ep11.Attribute"];
+	map<uint64,AttributeValue> Attributes = 4 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 	repeated bytes KeyBlobs = 5;
 }
