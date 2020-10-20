@@ -13,6 +13,7 @@ import (
 	"crypto/tls"
 	"encoding/asn1"
 	"fmt"
+	"math/big"
 	"os"
 	"os/signal"
 	"reflect"
@@ -26,7 +27,11 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// The following IBM Cloud items need to be changed prior to running the sample program
+// The examples in this file demonstrate various flows used to perform cryptographic operations
+// There are three cipher flows: EP11 single-part, PKCS #11 single-part, and PKCS #11 multi-part
+// See the cipher flow diagram contained in the README.md file of this repository for additional information
+
+// The following IBM Cloud HPCS service items need to be changed prior to running the sample program
 const address = "<grep11_server_address>:<port>"
 
 var callOpts = []grpc.DialOption{
@@ -50,6 +55,8 @@ func Example_getMechanismInfo() {
 	cryptoClient := pb.NewCryptoClient(conn)
 
 	mechanismListRequest := &pb.GetMechanismListRequest{}
+
+	// Retrieve a list of all supported mechanisms
 	mechanismListResponse, err := cryptoClient.GetMechanismList(context.Background(), mechanismListRequest)
 	if err != nil {
 		panic(fmt.Errorf("Get mechanism list error: %s", err))
@@ -59,19 +66,60 @@ func Example_getMechanismInfo() {
 	mechanismInfoRequest := &pb.GetMechanismInfoRequest{
 		Mech: ep11.CKM_RSA_PKCS,
 	}
-	_, err = cryptoClient.GetMechanismInfo(context.Background(), mechanismInfoRequest)
+
+	// Retrieve information about the CKM_RSA_PKCS mechanism
+	mechanismInfoResponse, err := cryptoClient.GetMechanismInfo(context.Background(), mechanismInfoRequest)
 	if err != nil {
 		panic(fmt.Errorf("Get mechanism info error: %s", err))
 	}
+
+	_ = mechanismInfoResponse // simulate use of mechanismInfoResponse
 
 	// Output:
 	// Got mechanism list:
 	// [CKM_RSA_PKCS] ...
 }
 
-// Example_encryptAndDecrypt encrypts and decrypts plain text
-// Flow: connect, generate AES key, generate IV, encrypt multi-part data, decrypt multi-part data
-func Example_encryptAndDecrypt() {
+// Example_generateGenericKey creates a generic key
+// Generic keys can be used to derive new keys
+// Flow: connect, generate generic key
+func Example_generateGenericKey() {
+	conn, err := grpc.Dial(address, callOpts...)
+	if err != nil {
+		panic(fmt.Errorf("Could not connect to server: %s", err))
+	}
+	defer conn.Close()
+
+	cryptoClient := pb.NewCryptoClient(conn)
+	keyLen := 128 // bits
+	keyTemplate := ep11.EP11Attributes{
+		ep11.CKA_KEY_TYPE:    ep11.CKK_GENERIC_SECRET,
+		ep11.CKA_CLASS:       ep11.CKO_SECRET_KEY,
+		ep11.CKA_VALUE_LEN:   keyLen / 8,
+		ep11.CKA_EXTRACTABLE: false,
+	}
+
+	keyGenMsg := &pb.GenerateKeyRequest{
+		Mech:     &pb.Mechanism{Mechanism: ep11.CKM_GENERIC_SECRET_KEY_GEN},
+		Template: util.AttributeMap(keyTemplate),
+	}
+
+	keyGenResp, err := cryptoClient.GenerateKey(context.Background(), keyGenMsg)
+	if err != nil {
+		panic(fmt.Errorf("GenerateKey Error: %s", err))
+	}
+
+	_ = keyGenResp // simulates the use of the Generic key
+
+	fmt.Println("Generated Generic Key")
+
+	// Output:
+	// Generated Generic Key
+}
+
+// Example_encryptAndDecryptUsingAES encrypts and decrypts plain text using a generated AES key
+// Flow: connect, generate AES key, generate IV, encrypt PKCS #11 multi-part data, decrypt PKCS #11 multi-part data
+func Example_encryptAndDecryptUsingAES() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
 		panic(fmt.Errorf("Could not connect to server: %s", err))
@@ -80,6 +128,8 @@ func Example_encryptAndDecrypt() {
 
 	cryptoClient := pb.NewCryptoClient(conn)
 	keyLen := 128
+
+	// Setup the AES key's attributes
 	keyTemplate := ep11.EP11Attributes{
 		ep11.CKA_VALUE_LEN:   keyLen / 8,
 		ep11.CKA_WRAP:        false,
@@ -87,7 +137,6 @@ func Example_encryptAndDecrypt() {
 		ep11.CKA_ENCRYPT:     true,
 		ep11.CKA_DECRYPT:     true,
 		ep11.CKA_EXTRACTABLE: false, // set to false!
-		ep11.CKA_TOKEN:       true,  // ignored by EP11
 	}
 
 	keyGenMsg := &pb.GenerateKeyRequest{
@@ -95,7 +144,7 @@ func Example_encryptAndDecrypt() {
 		Template: util.AttributeMap(keyTemplate),
 	}
 
-	generateKeyStatus, err := cryptoClient.GenerateKey(context.Background(), keyGenMsg)
+	generateKeyResponse, err := cryptoClient.GenerateKey(context.Background(), keyGenMsg)
 	if err != nil {
 		panic(fmt.Errorf("GenerateKey Error: %s", err))
 	}
@@ -104,6 +153,8 @@ func Example_encryptAndDecrypt() {
 	rngTemplate := &pb.GenerateRandomRequest{
 		Len: (uint64)(ep11.AES_BLOCK_SIZE),
 	}
+
+	// Generate 16 bytes of random data for the initialization vector
 	rng, err := cryptoClient.GenerateRandom(context.Background(), rngTemplate)
 	if err != nil {
 		panic(fmt.Errorf("GenerateRandom Error: %s", err))
@@ -111,85 +162,86 @@ func Example_encryptAndDecrypt() {
 	iv := rng.Rnd[:ep11.AES_BLOCK_SIZE]
 	fmt.Println("Generated IV")
 
-	encipherInitInfo := &pb.EncryptInitRequest{
+	encryptInitRequest := &pb.EncryptInitRequest{
 		Mech: &pb.Mechanism{Mechanism: ep11.CKM_AES_CBC_PAD, Parameter: &pb.Mechanism_ParameterB{ParameterB: iv}},
-		Key:  generateKeyStatus.KeyBytes, // you may want to store this
+		Key:  generateKeyResponse.KeyBytes, // you may want to store this
 	}
-	cipherStateInit, err := cryptoClient.EncryptInit(context.Background(), encipherInitInfo)
+
+	encryptInitResponse, err := cryptoClient.EncryptInit(context.Background(), encryptInitRequest)
 	if err != nil {
 		panic(fmt.Errorf("Failed EncryptInit [%s]", err))
 	}
 
-	plain := []byte("Hello, this is a very long and creative message without any imagination")
+	plain := []byte("Hello, this is a very long and creative message")
 
-	encipherDataUpdate := &pb.EncryptUpdateRequest{
-		State: cipherStateInit.State,
+	encryptUpdateRequest := &pb.EncryptUpdateRequest{
+		State: encryptInitResponse.State,
 		Plain: plain[:20],
 	}
-	encipherStateUpdate, err := cryptoClient.EncryptUpdate(context.Background(), encipherDataUpdate)
+	encryptUpdateResponse, err := cryptoClient.EncryptUpdate(context.Background(), encryptUpdateRequest)
 	if err != nil {
 		panic(fmt.Errorf("Failed Encrypt [%s]", err))
 	}
 
-	ciphertext := encipherStateUpdate.Ciphered[:]
-	encipherDataUpdate = &pb.EncryptUpdateRequest{
-		State: encipherStateUpdate.State,
+	ciphertext := encryptUpdateResponse.Ciphered[:]
+	encryptUpdateRequest = &pb.EncryptUpdateRequest{
+		State: encryptUpdateResponse.State,
 		Plain: plain[20:],
 	}
-	encipherStateUpdate, err = cryptoClient.EncryptUpdate(context.Background(), encipherDataUpdate)
+	encryptUpdateResponse, err = cryptoClient.EncryptUpdate(context.Background(), encryptUpdateRequest)
 	if err != nil {
 		panic(fmt.Errorf("Failed Encrypt [%s]", err))
 	}
 
-	ciphertext = append(ciphertext, encipherStateUpdate.Ciphered...)
-	encipherDataFinal := &pb.EncryptFinalRequest{
-		State: encipherStateUpdate.State,
+	ciphertext = append(ciphertext, encryptUpdateResponse.Ciphered...)
+	encryptFinalRequest := &pb.EncryptFinalRequest{
+		State: encryptUpdateResponse.State,
 	}
-	encipherStateFinal, err := cryptoClient.EncryptFinal(context.Background(), encipherDataFinal)
+	encryptFinalResponse, err := cryptoClient.EncryptFinal(context.Background(), encryptFinalRequest)
 	if err != nil {
 		panic(fmt.Errorf("Failed EncryptFinal [%s]", err))
 	}
 
-	ciphertext = append(ciphertext, encipherStateFinal.Ciphered...)
+	ciphertext = append(ciphertext, encryptFinalResponse.Ciphered...)
 	fmt.Println("Encrypted message")
 
-	decipherInitInfo := &pb.DecryptInitRequest{
+	decryptInitRequest := &pb.DecryptInitRequest{
 		Mech: &pb.Mechanism{Mechanism: ep11.CKM_AES_CBC_PAD, Parameter: &pb.Mechanism_ParameterB{ParameterB: iv}},
-		Key:  generateKeyStatus.KeyBytes, // you may want to store this
+		Key:  generateKeyResponse.KeyBytes, // you may want to store this
 	}
-	decipherStateInit, err := cryptoClient.DecryptInit(context.Background(), decipherInitInfo)
+	decryptInitResponse, err := cryptoClient.DecryptInit(context.Background(), decryptInitRequest)
 	if err != nil {
 		panic(fmt.Errorf("Failed DecryptInit [%s]", err))
 	}
 
-	decipherDataUpdate := &pb.DecryptUpdateRequest{
-		State:    decipherStateInit.State,
+	decryptUpdateRequest := &pb.DecryptUpdateRequest{
+		State:    decryptInitResponse.State,
 		Ciphered: ciphertext[:16],
 	}
-	decipherStateUpdate, err := cryptoClient.DecryptUpdate(context.Background(), decipherDataUpdate)
+	decryptUpdateResponse, err := cryptoClient.DecryptUpdate(context.Background(), decryptUpdateRequest)
 	if err != nil {
 		panic(fmt.Errorf("Failed DecryptUpdate [%s]", err))
 	}
 
-	plaintext := decipherStateUpdate.Plain[:]
-	decipherDataUpdate = &pb.DecryptUpdateRequest{
-		State:    decipherStateUpdate.State,
+	plaintext := decryptUpdateResponse.Plain[:]
+	decryptUpdateRequest = &pb.DecryptUpdateRequest{
+		State:    decryptUpdateResponse.State,
 		Ciphered: ciphertext[16:],
 	}
-	decipherStateUpdate, err = cryptoClient.DecryptUpdate(context.Background(), decipherDataUpdate)
+	decryptUpdateResponse, err = cryptoClient.DecryptUpdate(context.Background(), decryptUpdateRequest)
 	if err != nil {
 		panic(fmt.Errorf("Failed DecryptUpdate [%s]", err))
 	}
-	plaintext = append(plaintext, decipherStateUpdate.Plain...)
+	plaintext = append(plaintext, decryptUpdateResponse.Plain...)
 
-	decipherDataFinal := &pb.DecryptFinalRequest{
-		State: decipherStateUpdate.State,
+	decryptFinalRequest := &pb.DecryptFinalRequest{
+		State: decryptUpdateResponse.State,
 	}
-	decipherStateFinal, err := cryptoClient.DecryptFinal(context.Background(), decipherDataFinal)
+	decryptFinalResponse, err := cryptoClient.DecryptFinal(context.Background(), decryptFinalRequest)
 	if err != nil {
 		panic(fmt.Errorf("Failed DecryptFinal [%s]", err))
 	}
-	plaintext = append(plaintext, decipherStateFinal.Plain...)
+	plaintext = append(plaintext, decryptFinalResponse.Plain...)
 
 	if !reflect.DeepEqual(plain, plaintext) {
 		panic(fmt.Errorf("Failed comparing plain text of cipher single"))
@@ -202,11 +254,11 @@ func Example_encryptAndDecrypt() {
 	// Generated IV
 	// Encrypted message
 	// Decrypted message
-	// Hello, this is a very long and creative message without any imagination
+	// Hello, this is a very long and creative message
 }
 
 // Example_digest calculates the digest of some plain text
-// Flow: connect, digest single-part data, digest multi-part data
+// Flow: connect, digest PKCS #11 single-part data, digest PKCS #11 multi-part data
 func Example_digest() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
@@ -272,7 +324,7 @@ func Example_digest() {
 }
 
 // Example_signAndVerifyUsingRSAKeyPair signs some data and verifies it
-// Flow: connect, generate RSA key pair, sign single-part data, verify single-part data
+// Flow: connect, generate RSA key pair, sign PKCS #11 single-part data, PKCS #11 verify single-part data
 func Example_signAndVerifyUsingRSAKeyPair() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
@@ -303,7 +355,7 @@ func Example_signAndVerifyUsingRSAKeyPair() {
 		PubKeyTemplate:  util.AttributeMap(publicKeyTemplate),
 		PrivKeyTemplate: util.AttributeMap(privateKeyTemplate),
 	}
-	generateKeyPairStatus, err := cryptoClient.GenerateKeyPair(context.Background(), generateKeypairRequest)
+	generateKeyPairResponse, err := cryptoClient.GenerateKeyPair(context.Background(), generateKeypairRequest)
 	if err != nil {
 		panic(fmt.Errorf("GenerateKeyPair error: %s", err))
 	}
@@ -312,7 +364,7 @@ func Example_signAndVerifyUsingRSAKeyPair() {
 	// Sign data
 	signInitRequest := &pb.SignInitRequest{
 		Mech:    &pb.Mechanism{Mechanism: ep11.CKM_SHA1_RSA_PKCS},
-		PrivKey: generateKeyPairStatus.PrivKeyBytes,
+		PrivKey: generateKeyPairResponse.PrivKeyBytes,
 	}
 	signInitResponse, err := cryptoClient.SignInit(context.Background(), signInitRequest)
 	if err != nil {
@@ -332,7 +384,7 @@ func Example_signAndVerifyUsingRSAKeyPair() {
 
 	verifyInitRequest := &pb.VerifyInitRequest{
 		Mech:   &pb.Mechanism{Mechanism: ep11.CKM_SHA1_RSA_PKCS},
-		PubKey: generateKeyPairStatus.PubKeyBytes,
+		PubKey: generateKeyPairResponse.PubKeyBytes,
 	}
 	verifyInitResponse, err := cryptoClient.VerifyInit(context.Background(), verifyInitRequest)
 	if err != nil {
@@ -343,6 +395,8 @@ func Example_signAndVerifyUsingRSAKeyPair() {
 		Data:      []byte(signData[:]),
 		Signature: SignResponse.Signature,
 	}
+
+	// Verify the data
 	_, err = cryptoClient.Verify(context.Background(), verifyRequest)
 	if ok, ep11Status := util.Convert(err); !ok {
 		if ep11Status.Code == ep11.CKR_SIGNATURE_INVALID {
@@ -359,8 +413,281 @@ func Example_signAndVerifyUsingRSAKeyPair() {
 	// Verified
 }
 
+// Example_signAndVerifyUsingDSAKeyPair signs some data and verifies it
+// Flow: connect, generate DSA key pair, sign PKCS #11 single-part data, PKCS #11 verify single-part data
+func Example_signAndVerifyUsingDSAKeyPair() {
+	conn, err := grpc.Dial(address, callOpts...)
+	if err != nil {
+		panic(fmt.Errorf("did not connect: %v", err))
+	}
+	defer conn.Close()
+
+	cryptoClient := pb.NewCryptoClient(conn)
+
+	dsaDomainTemplate := ep11.EP11Attributes{
+		ep11.CKA_PRIME_BITS: 2048,
+	}
+
+	generateKeyRequest := &pb.GenerateKeyRequest{
+		Mech:     &pb.Mechanism{Mechanism: ep11.CKM_DSA_PARAMETER_GEN},
+		Template: util.AttributeMap(dsaDomainTemplate),
+	}
+
+	// First obtain DSA domain parameters that will used by the DSA GenerateKeyPair request
+	generateKeyResponse, err := cryptoClient.GenerateKey(context.Background(), generateKeyRequest)
+	if err != nil {
+		panic(fmt.Errorf("GenerateKeyPair error: %s", err))
+	}
+	fmt.Println("Generated DSA domain parameters")
+
+	publicKeyTemplate := ep11.EP11Attributes{
+		ep11.CKA_VERIFY:            true, // to verify a signature
+		ep11.CKA_EXTRACTABLE:       false,
+		ep11.CKA_IBM_STRUCT_PARAMS: generateKeyResponse.KeyBytes,
+	}
+	privateKeyTemplate := ep11.EP11Attributes{
+		ep11.CKA_SIGN:        true, // to generate a signature
+		ep11.CKA_PRIVATE:     true,
+		ep11.CKA_SENSITIVE:   true,
+		ep11.CKA_EXTRACTABLE: false,
+	}
+
+	// Now generate the DSA key pair using the domain parameters created in the previous step
+	generateKeypairRequest := &pb.GenerateKeyPairRequest{
+		Mech:            &pb.Mechanism{Mechanism: ep11.CKM_DSA_KEY_PAIR_GEN},
+		PubKeyTemplate:  util.AttributeMap(publicKeyTemplate),
+		PrivKeyTemplate: util.AttributeMap(privateKeyTemplate),
+	}
+	generateKeyPairResponse, err := cryptoClient.GenerateKeyPair(context.Background(), generateKeypairRequest)
+	if err != nil {
+		panic(fmt.Errorf("GenerateKeyPair error: %s", err))
+	}
+	fmt.Println("Generated DSA key pair")
+
+	// Sign data
+	signInitRequest := &pb.SignInitRequest{
+		Mech:    &pb.Mechanism{Mechanism: ep11.CKM_DSA_SHA1},
+		PrivKey: generateKeyPairResponse.PrivKeyBytes,
+	}
+	signInitResponse, err := cryptoClient.SignInit(context.Background(), signInitRequest)
+	if err != nil {
+		panic(fmt.Errorf("SignInit error: %s", err))
+	}
+
+	signData := sha256.Sum256([]byte("This data needs to be signed"))
+	signRequest := &pb.SignRequest{
+		State: signInitResponse.State,
+		Data:  []byte(signData[:]),
+	}
+
+	// Sign the data
+	SignResponse, err := cryptoClient.Sign(context.Background(), signRequest)
+	if err != nil {
+		panic(fmt.Errorf("Sign error: %s", err))
+	}
+	fmt.Println("Data signed")
+
+	verifyInitRequest := &pb.VerifyInitRequest{
+		Mech:   &pb.Mechanism{Mechanism: ep11.CKM_DSA_SHA1},
+		PubKey: generateKeyPairResponse.PubKeyBytes,
+	}
+	verifyInitResponse, err := cryptoClient.VerifyInit(context.Background(), verifyInitRequest)
+	if err != nil {
+		panic(fmt.Errorf("VerifyInit error: %s", err))
+	}
+	verifyRequest := &pb.VerifyRequest{
+		State:     verifyInitResponse.State,
+		Data:      []byte(signData[:]),
+		Signature: SignResponse.Signature,
+	}
+
+	// Verify the data
+	_, err = cryptoClient.Verify(context.Background(), verifyRequest)
+	if ok, ep11Status := util.Convert(err); !ok {
+		if ep11Status.Code == ep11.CKR_SIGNATURE_INVALID {
+			panic(fmt.Errorf("Invalid signature"))
+		} else {
+			panic(fmt.Errorf("Verify error: [%d]: %s", ep11Status.Code, ep11Status.Detail))
+		}
+	}
+	fmt.Println("Verified")
+
+	// Output:
+	// Generated DSA domain parameters
+	// Generated DSA key pair
+	// Data signed
+	// Verified
+}
+
+// Example_deriveKeyUsingDHKeyPair signs some data and verifies it
+// Flow: connect, generate Diffie-Hellman key pair, derive key from Diffie-Hellman key pair
+func Example_deriveKeyUsingDHKeyPair() {
+	conn, err := grpc.Dial(address, callOpts...)
+	if err != nil {
+		panic(fmt.Errorf("did not connect: %v", err))
+	}
+	defer conn.Close()
+
+	cryptoClient := pb.NewCryptoClient(conn)
+
+	dhDomainTemplate := ep11.EP11Attributes{
+		ep11.CKA_PRIME_BITS: 2048,
+	}
+
+	generateKeyRequest := &pb.GenerateKeyRequest{
+		Mech:     &pb.Mechanism{Mechanism: ep11.CKM_DH_PKCS_PARAMETER_GEN},
+		Template: util.AttributeMap(dhDomainTemplate),
+	}
+
+	// Create Diffie-Hellman domain parameters for Alice and Bob to use. They will used by the Diffie-Hellman GenerateKeyPair requests.
+	commonGenerateKeyResponse, err := cryptoClient.GenerateKey(context.Background(), generateKeyRequest)
+	if err != nil {
+		panic(fmt.Errorf("GenerateKeyPair error: %s", err))
+	}
+	fmt.Println("Generated Diffie-Hellman domain parameters for Alice and Bob")
+
+	commonPublicKeyTemplate := ep11.EP11Attributes{
+		ep11.CKA_DERIVE:            true, // to verify a signature
+		ep11.CKA_EXTRACTABLE:       false,
+		ep11.CKA_IBM_STRUCT_PARAMS: commonGenerateKeyResponse.KeyBytes,
+	}
+
+	privateKeyTemplate := ep11.EP11Attributes{
+		ep11.CKA_DERIVE:      true, // to generate a signature
+		ep11.CKA_PRIVATE:     true,
+		ep11.CKA_SENSITIVE:   true,
+		ep11.CKA_EXTRACTABLE: false,
+	}
+
+	// Now generate the Diffie-Hellman key pair for Alice using Alice's domain parameters created in the previous step
+	aliceGenerateKeypairRequest := &pb.GenerateKeyPairRequest{
+		Mech:            &pb.Mechanism{Mechanism: ep11.CKM_DH_PKCS_KEY_PAIR_GEN},
+		PubKeyTemplate:  util.AttributeMap(commonPublicKeyTemplate),
+		PrivKeyTemplate: util.AttributeMap(privateKeyTemplate),
+	}
+	aliceGenerateKeyPairResponse, err := cryptoClient.GenerateKeyPair(context.Background(), aliceGenerateKeypairRequest)
+	if err != nil {
+		panic(fmt.Errorf("GenerateKeyPair error: %s", err))
+	}
+	fmt.Println("Generated Diffie-Hellman key pair for Alice")
+
+	// Now generate the Diffie-Hellman key pair for Bob using Bob's domain parameters created in the previous step
+	bobGenerateKeypairRequest := &pb.GenerateKeyPairRequest{
+		Mech:            &pb.Mechanism{Mechanism: ep11.CKM_DH_PKCS_KEY_PAIR_GEN},
+		PubKeyTemplate:  util.AttributeMap(commonPublicKeyTemplate),
+		PrivKeyTemplate: util.AttributeMap(privateKeyTemplate),
+	}
+	bobGenerateKeyPairResponse, err := cryptoClient.GenerateKeyPair(context.Background(), bobGenerateKeypairRequest)
+	if err != nil {
+		panic(fmt.Errorf("GenerateKeyPair error: %s", err))
+	}
+	fmt.Println("Generated Diffie-Hellman key pair for Bob")
+
+	deriveKeyTemplate := ep11.EP11Attributes{
+		ep11.CKA_CLASS:     ep11.CKO_SECRET_KEY,
+		ep11.CKA_KEY_TYPE:  ep11.CKK_AES,
+		ep11.CKA_VALUE_LEN: 128 / 8,
+		ep11.CKA_ENCRYPT:   true,
+		ep11.CKA_DECRYPT:   true,
+	}
+
+	// The next step is to derive an AES key for Alice and Bob using each other's public key information
+	// Get contents of public key
+	alicPublicKey := util.DHPubKeyASN{}
+	_, err = asn1.Unmarshal(aliceGenerateKeyPairResponse.PubKeyBytes, &alicPublicKey)
+	if err != nil {
+		panic(fmt.Errorf("Failed to unmarshal Alice's public key: %s", err))
+	}
+	bobPublicKey := util.DHPubKeyASN{}
+	_, err = asn1.Unmarshal(bobGenerateKeyPairResponse.PubKeyBytes, &bobPublicKey)
+	if err != nil {
+		panic(fmt.Errorf("Failed to unmarshal Bob's public key: %s", err))
+	}
+	// Retrieve integer from public key: Alice's and Bob's public key is still ASN1 integer encoded, therefore, they need to be decoded
+	var bigIntData *big.Int
+	_, err = asn1.Unmarshal(bobPublicKey.PublicKey.Bytes, &bigIntData)
+	if err != nil {
+		panic(fmt.Errorf("Failed to unmarshal Bob's public key integer: %s", err))
+	}
+	bobPubInteger := bigIntData.Bytes()
+
+	_, err = asn1.Unmarshal(alicPublicKey.PublicKey.Bytes, &bigIntData)
+	if err != nil {
+		panic(fmt.Errorf("Failed to unmarshal Alice's public key integer: %s", err))
+	}
+	alicePubInteger := bigIntData.Bytes()
+
+	aliceDeriveKeyRequest := &pb.DeriveKeyRequest{
+		Mech:     &pb.Mechanism{Mechanism: ep11.CKM_DH_PKCS_DERIVE, Parameter: &pb.Mechanism_ParameterB{ParameterB: bobPubInteger}},
+		Template: util.AttributeMap(deriveKeyTemplate),
+		BaseKey:  aliceGenerateKeyPairResponse.PrivKeyBytes,
+	}
+	aliceDeriveKeyResponse, err := cryptoClient.DeriveKey(context.Background(), aliceDeriveKeyRequest)
+	if err != nil {
+		panic(fmt.Errorf("Key derive error: %s", err))
+	}
+
+	fmt.Println("Key derived for Alice")
+
+	bobDeriveKeyRequest := &pb.DeriveKeyRequest{
+		Mech:     &pb.Mechanism{Mechanism: ep11.CKM_DH_PKCS_DERIVE, Parameter: &pb.Mechanism_ParameterB{ParameterB: alicePubInteger}},
+		Template: util.AttributeMap(deriveKeyTemplate),
+		BaseKey:  bobGenerateKeyPairResponse.PrivKeyBytes,
+	}
+	bobDeriveKeyResponse, err := cryptoClient.DeriveKey(context.Background(), bobDeriveKeyRequest)
+	if err != nil {
+		panic(fmt.Errorf("Key derive error: %s", err))
+	}
+
+	fmt.Println("Key derived for Bob")
+
+	// Encrypt with Alice's key and decrypt with Bob's key
+	var msg = []byte("hello world!")
+	rngTemplate := &pb.GenerateRandomRequest{
+		Len: (uint64)(ep11.AES_BLOCK_SIZE),
+	}
+	rng, err := cryptoClient.GenerateRandom(context.Background(), rngTemplate)
+	if err != nil {
+		panic(fmt.Errorf("GenerateRandom error: %s", err))
+	}
+	iv := rng.Rnd[:ep11.AES_BLOCK_SIZE]
+	encryptRequest := &pb.EncryptSingleRequest{
+		Key:   aliceDeriveKeyResponse.NewKeyBytes,
+		Mech:  &pb.Mechanism{Mechanism: ep11.CKM_AES_CBC_PAD, Parameter: &pb.Mechanism_ParameterB{ParameterB: iv}},
+		Plain: msg,
+	}
+	encryptResponse, err := cryptoClient.EncryptSingle(context.Background(), encryptRequest)
+	if err != nil {
+		panic(fmt.Errorf("Encrypt error: %s", err))
+	}
+
+	decryptRequest := &pb.DecryptSingleRequest{
+		Key:      bobDeriveKeyResponse.NewKeyBytes,
+		Mech:     &pb.Mechanism{Mechanism: ep11.CKM_AES_CBC_PAD, Parameter: &pb.Mechanism_ParameterB{ParameterB: iv}},
+		Ciphered: encryptResponse.Ciphered,
+	}
+	decryptResponse, err := cryptoClient.DecryptSingle(context.Background(), decryptRequest)
+	if err != nil {
+		panic(fmt.Errorf("Decrypt error: %s", err))
+	}
+
+	if !bytes.Equal(decryptResponse.Plain, msg) {
+		panic(fmt.Errorf("Decrypted message[%v] is different from the original message: [%v]", decryptResponse.Plain, msg))
+	} else {
+		fmt.Println("Alice and Bob generated the same derived key")
+	}
+
+	// Output:
+	// Generated Diffie-Hellman domain parameters for Alice and Bob
+	// Generated Diffie-Hellman key pair for Alice
+	// Generated Diffie-Hellman key pair for Bob
+	// Key derived for Alice
+	// Key derived for Bob
+	// Alice and Bob generated the same derived key
+}
+
 // Example_signAndVerifyUsingECDSAKeyPair generates an ECDSA key pair and uses the key pair to sign and verify data
-// Flow: connect, generate ECDSA key pair, sign single-part data, verify single-part data
+// Flow: connect, generate ECDSA key pair, sign PKCS #11 single-part data, verify PKCS #11 single-part data
 func Example_signAndVerifyUsingECDSAKeyPair() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
@@ -410,6 +737,8 @@ func Example_signAndVerifyUsingECDSAKeyPair() {
 		State: signInitResponse.State,
 		Data:  signData[:],
 	}
+
+	// Sign the data
 	SignResponse, err := cryptoClient.Sign(context.Background(), signRequest)
 	if err != nil {
 		panic(fmt.Errorf("Sign error: %s", err))
@@ -429,6 +758,8 @@ func Example_signAndVerifyUsingECDSAKeyPair() {
 		Data:      []byte(signData[:]),
 		Signature: SignResponse.Signature,
 	}
+
+	// Verify the data
 	_, err = cryptoClient.Verify(context.Background(), verifyRequest)
 	if ok, ep11Status := util.Convert(err); !ok {
 		if ep11Status.Code == ep11.CKR_SIGNATURE_INVALID {
@@ -446,8 +777,8 @@ func Example_signAndVerifyUsingECDSAKeyPair() {
 }
 
 // Example_signAndVerifyToTestErrorHandling signs some data, modifies the signature and verifies the expected returned error code
-// Flow: connect, generate ECDSA key pair, sign single-part data, modify signature to force verify error,
-//                verify single-part data, ensure proper error is returned
+// Flow: connect, generate ECDSA key pair, sign PKCS #11 single-part data, modify signature to force verify error,
+//                verify PKCS #11 single-part data, ensure proper error is returned
 func Example_signAndVerifyToTestErrorHandling() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
@@ -481,7 +812,7 @@ func Example_signAndVerifyToTestErrorHandling() {
 		panic(fmt.Errorf("GenerateKeyPair error: %s", err))
 	}
 
-	fmt.Println("Generated ECDSA PKCS key pair")
+	fmt.Println("Generated ECDSA key pair")
 
 	// Sign data
 	signInitRequest := &pb.SignInitRequest{
@@ -492,6 +823,8 @@ func Example_signAndVerifyToTestErrorHandling() {
 	if err != nil {
 		panic(fmt.Errorf("SignInit error: %s", err))
 	}
+
+	// Sign the data
 	signData := sha256.Sum256([]byte("This data needs to be signed"))
 	signRequest := &pb.SignRequest{
 		State: signInitResponse.State,
@@ -519,6 +852,8 @@ func Example_signAndVerifyToTestErrorHandling() {
 		Data:      []byte(signData[:]),
 		Signature: SignResponse.Signature,
 	}
+
+	// Verify the data -- expect an error
 	_, err = cryptoClient.Verify(context.Background(), verifyRequest)
 
 	if ok, ep11Status := util.Convert(err); !ok {
@@ -530,7 +865,7 @@ func Example_signAndVerifyToTestErrorHandling() {
 	}
 
 	// Output:
-	// Generated ECDSA PKCS key pair
+	// Generated ECDSA key pair
 	// Data signed
 	// Invalid signature
 }
@@ -547,7 +882,7 @@ func Example_wrapAndUnwrapKey() {
 	cryptoClient := pb.NewCryptoClient(conn)
 
 	// Generate a AES key
-	desKeyTemplate := ep11.EP11Attributes{
+	aesKeyTemplate := ep11.EP11Attributes{
 		ep11.CKA_VALUE_LEN:   128 / 8,
 		ep11.CKA_ENCRYPT:     true,
 		ep11.CKA_DECRYPT:     true,
@@ -555,9 +890,9 @@ func Example_wrapAndUnwrapKey() {
 	}
 	generateKeyRequest := &pb.GenerateKeyRequest{
 		Mech:     &pb.Mechanism{Mechanism: ep11.CKM_AES_KEY_GEN},
-		Template: util.AttributeMap(desKeyTemplate),
+		Template: util.AttributeMap(aesKeyTemplate),
 	}
-	generateNewKeyStatus, err := cryptoClient.GenerateKey(context.Background(), generateKeyRequest)
+	generateKeyResponse, err := cryptoClient.GenerateKey(context.Background(), generateKeyRequest)
 	if err != nil {
 		panic(fmt.Errorf("Generate AES key error: %s", err))
 	} else {
@@ -585,7 +920,7 @@ func Example_wrapAndUnwrapKey() {
 		PubKeyTemplate:  util.AttributeMap(publicKeyTemplate),
 		PrivKeyTemplate: util.AttributeMap(privateKeyTemplate),
 	}
-	generateKeyPairStatus, err := cryptoClient.GenerateKeyPair(context.Background(), generateKeypairRequest)
+	generateKeyPairResponse, err := cryptoClient.GenerateKeyPair(context.Background(), generateKeypairRequest)
 	if err != nil {
 		panic(fmt.Errorf("GenerateKeyPair error: %s", err))
 	}
@@ -593,16 +928,18 @@ func Example_wrapAndUnwrapKey() {
 
 	wrapKeyRequest := &pb.WrapKeyRequest{
 		Mech: &pb.Mechanism{Mechanism: ep11.CKM_RSA_PKCS},
-		KeK:  generateKeyPairStatus.PubKeyBytes,
-		Key:  generateNewKeyStatus.KeyBytes,
+		KeK:  generateKeyPairResponse.PubKeyBytes,
+		Key:  generateKeyResponse.KeyBytes,
 	}
+
+	// Wrap the AES key
 	wrapKeyResponse, err := cryptoClient.WrapKey(context.Background(), wrapKeyRequest)
 	if err != nil {
 		panic(fmt.Errorf("Wrap AES key error: %s", err))
 	}
 	fmt.Println("Wrapped AES key")
 
-	desUnwrapKeyTemplate := ep11.EP11Attributes{
+	aesUnwrapKeyTemplate := ep11.EP11Attributes{
 		ep11.CKA_CLASS:       ep11.CKO_SECRET_KEY,
 		ep11.CKA_KEY_TYPE:    ep11.CKK_AES,
 		ep11.CKA_VALUE_LEN:   128 / 8,
@@ -612,15 +949,17 @@ func Example_wrapAndUnwrapKey() {
 	}
 	unwrapRequest := &pb.UnwrapKeyRequest{
 		Mech:     &pb.Mechanism{Mechanism: ep11.CKM_RSA_PKCS},
-		KeK:      generateKeyPairStatus.PrivKeyBytes,
+		KeK:      generateKeyPairResponse.PrivKeyBytes,
 		Wrapped:  wrapKeyResponse.Wrapped,
-		Template: util.AttributeMap(desUnwrapKeyTemplate),
+		Template: util.AttributeMap(aesUnwrapKeyTemplate),
 	}
+
+	// Unwrap the AES key
 	unWrappedResponse, err := cryptoClient.UnwrapKey(context.Background(), unwrapRequest)
 	if err != nil {
 		panic(fmt.Errorf("Unwrap AES key error: %s", err))
 	}
-	if !bytes.Equal(generateNewKeyStatus.GetCheckSum()[:3], unWrappedResponse.GetCheckSum()[:3]) {
+	if !bytes.Equal(generateKeyResponse.GetCheckSum()[:3], unWrappedResponse.GetCheckSum()[:3]) {
 		panic(fmt.Errorf("Unwrap AES key has a different checksum than the original key"))
 	} else {
 		fmt.Println("Unwrapped AES key")
@@ -633,9 +972,10 @@ func Example_wrapAndUnwrapKey() {
 	// Unwrapped AES key
 }
 
-// Example_deriveKey generates ECDHE key pairs for Bob and Alice and then generates AES keys for both of them.
-// The names Alice and Bob are described in https://en.wikipedia.org/wiki/Diffie–Hellman_key_exchange.
-// Flow: connect, generate key pairs, derive AES key for Bob, derive AES key for Alice, encrypt with Alice's AES key and decrypt with Bob's AES key
+// Example_deriveKey generates ECDHE key pairs for Alice and Bob and then derives AES keys for both of them.
+// The names Bob and Alice are described in https://en.wikipedia.org/wiki/Diffie–Hellman_key_exchange.
+// Flow: connect, generate key pairs for Alice and Bob, derive AES key for Bob, derive AES key for Alice,
+//       encrypt with Alice's AES key and decrypt with Bob's AES key
 func Example_deriveKey() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
@@ -663,19 +1003,22 @@ func Example_deriveKey() {
 		PubKeyTemplate:  util.AttributeMap(publicKeyECTemplate),
 		PrivKeyTemplate: util.AttributeMap(privateKeyECTemplate),
 	}
+
+	// Generate Alice's EC key pair
 	aliceECKeypairResponse, err := cryptoClient.GenerateKeyPair(context.Background(), generateECKeypairRequest)
 	if err != nil {
 		panic(fmt.Errorf("Generate Alice EC key pair error: %s", err))
 	}
 	fmt.Println("Generated Alice EC key pair")
 
+	// Generate Bob's EC key pair
 	bobECKeypairResponse, err := cryptoClient.GenerateKeyPair(context.Background(), generateECKeypairRequest)
 	if err != nil {
 		panic(fmt.Errorf("Generate Bob EC key pair error: %s", err))
 	}
 	fmt.Println("Generated Bob EC key pair")
 
-	// Derive AES key for Alice
+	// Derive AES key for Alice and Bob
 	deriveKeyTemplate := ep11.EP11Attributes{
 		ep11.CKA_CLASS:     ep11.CKO_SECRET_KEY,
 		ep11.CKA_KEY_TYPE:  ep11.CKK_AES,
@@ -683,6 +1026,8 @@ func Example_deriveKey() {
 		ep11.CKA_ENCRYPT:   true,
 		ep11.CKA_DECRYPT:   true,
 	}
+
+	// Extract Bob's EC coordinates
 	combinedCoordinates, err := util.GetPubkeyBytesFromSPKI(bobECKeypairResponse.PubKeyBytes)
 	if err != nil {
 		panic(fmt.Errorf("Bob's EC key cannot obtain coordinates: %s", err))
@@ -692,12 +1037,14 @@ func Example_deriveKey() {
 		Template: util.AttributeMap(deriveKeyTemplate),
 		BaseKey:  aliceECKeypairResponse.PrivKeyBytes,
 	}
+
+	// Derive AES key for Alice
 	aliceDerivekeyResponse, err := cryptoClient.DeriveKey(context.Background(), aliceDerivekeyRequest)
 	if err != nil {
 		panic(fmt.Errorf("Alice EC key derive error: %s", err))
 	}
 
-	// Derive AES key for Bob
+	// Extract Alice's EC coordinates
 	combinedCoordinates, err = util.GetPubkeyBytesFromSPKI(aliceECKeypairResponse.PubKeyBytes)
 	if err != nil {
 		panic(fmt.Errorf("Alice's EC key cannot obtain coordinates: %s", err))
@@ -707,16 +1054,20 @@ func Example_deriveKey() {
 		Template: util.AttributeMap(deriveKeyTemplate),
 		BaseKey:  bobECKeypairResponse.PrivKeyBytes,
 	}
+
+	// Derive AES key for Bob
 	bobDerivekeyResponse, err := cryptoClient.DeriveKey(context.Background(), bobDerivekeyRequest)
 	if err != nil {
 		panic(fmt.Errorf("Bob EC Key Derive Error: %s", err))
 	}
 
-	// Encrypt with Alice's key and decrypt with Bob's key
+	// Encrypt with Alice's AES key and decrypt with Bob's AES key
 	var msg = []byte("hello world!")
 	rngTemplate := &pb.GenerateRandomRequest{
 		Len: (uint64)(ep11.AES_BLOCK_SIZE),
 	}
+
+	// Generate a 16 byte initialization vector for the encrypt/decrypt operations
 	rng, err := cryptoClient.GenerateRandom(context.Background(), rngTemplate)
 	if err != nil {
 		panic(fmt.Errorf("GenerateRandom error: %s", err))
@@ -727,6 +1078,8 @@ func Example_deriveKey() {
 		Mech:  &pb.Mechanism{Mechanism: ep11.CKM_AES_CBC_PAD, Parameter: &pb.Mechanism_ParameterB{ParameterB: iv}},
 		Plain: msg,
 	}
+
+	// Encrypt the data using Alices's derived AES key
 	encryptResponse, err := cryptoClient.EncryptSingle(context.Background(), encryptRequest)
 	if err != nil {
 		panic(fmt.Errorf("Encrypt error: %s", err))
@@ -737,6 +1090,8 @@ func Example_deriveKey() {
 		Mech:     &pb.Mechanism{Mechanism: ep11.CKM_AES_CBC_PAD, Parameter: &pb.Mechanism_ParameterB{ParameterB: iv}},
 		Ciphered: encryptResponse.Ciphered,
 	}
+
+	// Decrypt the data using Bob's derived AES key
 	decryptResponse, err := cryptoClient.DecryptSingle(context.Background(), decryptRequest)
 	if err != nil {
 		panic(fmt.Errorf("Decrypt error: %s", err))
@@ -794,7 +1149,6 @@ NOTE: This test contains two pauses that require the user to type CTRL-c after e
 		ep11.CKA_ENCRYPT:     true,
 		ep11.CKA_DECRYPT:     true,
 		ep11.CKA_EXTRACTABLE: false,
-		ep11.CKA_TOKEN:       true,
 	}
 
 	keygenmsg := &pb.GenerateKeyRequest{
@@ -809,11 +1163,13 @@ NOTE: This test contains two pauses that require the user to type CTRL-c after e
 
 	t.Log("Generated original AES key that will be rewrapped")
 
-	// Encrypt data using generated AES key blob. The encrypted data will be used later in the test
+	// Encrypt data using the generated AES key blob. The encrypted data will be used later in the test.
 	// The data will be decrypted by the re-wrapped AES key blob.
 	rngTemplate := &pb.GenerateRandomRequest{
 		Len: (uint64)(ep11.AES_BLOCK_SIZE),
 	}
+
+	// Generate a 16 byte initialization vector for the encrypt/decrypt operations
 	rng, err := cryptoClient.GenerateRandom(context.Background(), rngTemplate)
 	if err != nil {
 		t.Fatalf("GenerateRandom Error: %s", err)
@@ -827,12 +1183,13 @@ NOTE: This test contains two pauses that require the user to type CTRL-c after e
 		Plain: plain,
 	}
 
+	// Encrypt the data before performing a RewrapKeyBlob operation
 	origEncryptResponse, err := cryptoClient.EncryptSingle(context.Background(), encryptRequest)
 	if err != nil {
 		t.Fatalf("Failed EncryptSingle [%s]", err)
 	}
 
-	t.Log("Encrypted message using original wrapped AES key")
+	t.Log("Encrypted message using the original wrapped AES key")
 
 	// Call RewrapKeyBlob function
 	rewrapKeyBlobRequest := &pb.RewrapKeyBlobRequest{
@@ -854,6 +1211,7 @@ NOTE: This test contains two pauses that require the user to type CTRL-c after e
 	// Pause here until user is ready to rewrap key blobs
 	util.Pause(msg, sigs, "Press Ctrl-c after the domain has been placed into the committed state in order to continue with the RewrapKeyBlob action")
 
+	// Rewrap the AES key blob using the HSM's new wrapping key
 	rewrapKeyBlobResponse, err := cryptoClient.RewrapKeyBlob(context.Background(), rewrapKeyBlobRequest)
 	if err != nil {
 		t.Fatalf("Received error for RewrapKeyBlob operation: %s", err)
@@ -877,7 +1235,7 @@ NOTE: This test contains two pauses that require the user to type CTRL-c after e
 		t.Fatalf("Failed EncryptSingle [%s]", err)
 	}
 
-	t.Log("Encrypted message using rewrapped AES key")
+	t.Log("Encrypted message using the rewrapped AES key")
 
 	// Decrypt data that was encrypted with the new wrapped AES key
 	decryptRequest := &pb.DecryptSingleRequest{
@@ -887,15 +1245,15 @@ NOTE: This test contains two pauses that require the user to type CTRL-c after e
 	}
 	decryptResponse, err := cryptoClient.DecryptSingle(context.Background(), decryptRequest)
 	if err != nil {
-		t.Fatalf("Failed DecryptSingle using rewrapped AES key [%s]", err)
+		t.Fatalf("Failed DecryptSingle using the rewrapped AES key [%s]", err)
 	}
 
 	// Compare decrypted response (using the second wrapping key) with the original plain text
 	if !reflect.DeepEqual(plain, decryptResponse.Plain) {
-		t.Fatalf("Failed comparing plain text of cipher single using reencrypted AES key")
+		t.Fatalf("Failed comparing plain text of cipher single using the reencrypted AES key")
 	}
 
-	t.Log("Successfully decrypted new data with rewrapped AES key")
+	t.Log("Successfully decrypted new data with the rewrapped AES key")
 
 	// Decrypt initial data that was encrypted with new wrapping key
 	decryptRequest = &pb.DecryptSingleRequest{
@@ -905,13 +1263,13 @@ NOTE: This test contains two pauses that require the user to type CTRL-c after e
 	}
 	decryptResponse, err = cryptoClient.DecryptSingle(context.Background(), decryptRequest)
 	if err != nil {
-		t.Fatalf("Failed DecryptSingle using rewrapped AES key [%s]", err)
+		t.Fatalf("Failed DecryptSingle using the rewrapped AES key [%s]", err)
 	}
 
 	// Compare decrypted response (using the second wrapping key) with the original plain text
 	if !reflect.DeepEqual(plain, decryptResponse.Plain) {
-		t.Fatalf("Failed comparing plain text of cipher single using rewrapped AES key")
+		t.Fatalf("Failed comparing plain text of cipher single using the rewrapped AES key")
 	}
 
-	t.Log("Successfully decrypted original data with rewrapped AES key")
+	t.Log("Successfully decrypted original data with the rewrapped AES key")
 }

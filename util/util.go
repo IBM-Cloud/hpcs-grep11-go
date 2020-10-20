@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"net/http"
 	"os"
 	"reflect"
@@ -146,12 +147,15 @@ func Convert(err error) (bool, *pb.Grep11Error) {
 
 var (
 	// The following variables are standardized elliptic curve definitions
-	OIDNamedCurveP224 = asn1.ObjectIdentifier{1, 3, 132, 0, 33}
-	OIDNamedCurveP256 = asn1.ObjectIdentifier{1, 2, 840, 10045, 3, 1, 7}
-	OIDNamedCurveP384 = asn1.ObjectIdentifier{1, 3, 132, 0, 34}
-	OIDNamedCurveP521 = asn1.ObjectIdentifier{1, 3, 132, 0, 35}
-	oidECPublicKey    = asn1.ObjectIdentifier{1, 2, 840, 10045, 2, 1}
-	oidRSAPublicKey   = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1}
+	OIDNamedCurveP224      = asn1.ObjectIdentifier{1, 3, 132, 0, 33}
+	OIDNamedCurveP256      = asn1.ObjectIdentifier{1, 2, 840, 10045, 3, 1, 7}
+	OIDNamedCurveP384      = asn1.ObjectIdentifier{1, 3, 132, 0, 34}
+	OIDNamedCurveP521      = asn1.ObjectIdentifier{1, 3, 132, 0, 35}
+	oidECPublicKey         = asn1.ObjectIdentifier{1, 2, 840, 10045, 2, 1}
+	oidRSAPublicKey        = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1}
+	oidDHPublicKey         = asn1.ObjectIdentifier{1, 2, 840, 10046, 2}
+	OIDNamedCurveSecp256k1 = asn1.ObjectIdentifier{1, 3, 132, 0, 10}
+	OIDNamedCurveED25519   = asn1.ObjectIdentifier{1, 3, 101, 112}
 )
 
 // GetNamedCurveFromOID returns an elliptic curve from the specified curve OID
@@ -169,6 +173,19 @@ func GetNamedCurveFromOID(oid asn1.ObjectIdentifier) elliptic.Curve {
 	return nil
 }
 
+// GetSignMechanismFromOID returns the signing mechanism associated with an object identifier
+func GetSignMechanismFromOID(oid asn1.ObjectIdentifier) (ep11.Mechanism, error) {
+	switch {
+	case oid.Equal(OIDNamedCurveED25519):
+		return ep11.CKM_IBM_ED25519_SHA512, nil
+	case oid.Equal(OIDNamedCurveP256):
+		return ep11.CKM_ECDSA, nil
+	case oid.Equal(OIDNamedCurveSecp256k1):
+		return ep11.CKM_ECDSA, nil
+	}
+	return 0, fmt.Errorf("Unexpected OID: %+v", oid)
+}
+
 // ecKeyIdentificationASN defines the ECDSA priviate/public key identifier for GREP11
 type ecKeyIdentificationASN struct {
 	KeyType asn1.ObjectIdentifier
@@ -179,6 +196,24 @@ type ecKeyIdentificationASN struct {
 type ecPubKeyASN struct {
 	Ident ecKeyIdentificationASN
 	Point asn1.BitString
+}
+
+// DH2Int defines the Diffie-Hellman Prime and Base values extracted from the public key
+type DH2Int struct {
+	Prime *big.Int
+	Base  *big.Int
+}
+
+// DHParam defines the Diffie-Hellman algorithm Identifier structure
+type DHParam struct {
+	Algorithm asn1.ObjectIdentifier
+	PB        DH2Int
+}
+
+// DHPubKeyASN defines the Diffie-Hellman public key ASN1 encoding structure for GREP11
+type DHPubKeyASN struct {
+	Parameter DHParam
+	PublicKey asn1.BitString
 }
 
 // generalKeyTypeASN is used to identify the public key ASN1 encoding structure for GREP11

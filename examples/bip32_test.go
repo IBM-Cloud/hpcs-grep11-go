@@ -17,8 +17,8 @@ import (
 	grpc "google.golang.org/grpc"
 )
 
-//Test_BIP32
-//Flow: generate 256 random seed - secp256k1 => generate master node => derive master key m => derive wallet account key m/0
+// Example_bip32_Base
+// Flow: generate 256 random seed - secp256k1 => generate master node => derive master key m => derive wallet account key m/0
 // => derive wallet chain keypair m/0/0 => derive address key m/0/0/0 => sign/verify ECDSA
 // => base test cover private->private private->public key derivation
 func Example_bip32_Base() {
@@ -171,7 +171,7 @@ func Example_bip32_Base() {
 	// SignSingle and verifySingle
 }
 
-//cover private->private public->public key derivation
+// Example_bip32_KeyDerivation covers private->private public->public key derivations
 func Example_bip32_KeyDerivation() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
@@ -301,7 +301,7 @@ func Example_bip32_KeyDerivation() {
 	// Don't supporte deriving key from pulic -> public in current soft-hsm version
 }
 
-//cross sign and verification
+// Example_bip32_Cross_SignVerify performs cross sign and verification operations
 func Example_bip32_Cross_SignVerify() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
@@ -510,7 +510,6 @@ func Example_bip32_Cross_SignVerify() {
 }
 
 func bip32DeriveKey(cryptoClient pb.CryptoClient, deriveType pb.BTCDeriveParm_BTCDeriveType, childKeyIndex uint64, baseKey []byte, chainCode []byte) ([]byte, []byte) {
-
 	keyTemplate := ep11.EP11Attributes{
 		ep11.CKA_VERIFY:          true,
 		ep11.CKA_EXTRACTABLE:     false,
@@ -547,7 +546,6 @@ func bip32DeriveKey(cryptoClient pb.CryptoClient, deriveType pb.BTCDeriveParm_BT
 }
 
 func bip32SignAndVerify(cryptoClient pb.CryptoClient, privateKey []byte, publicKey []byte) bool {
-
 	signInitRequest := &pb.SignInitRequest{
 		Mech:    &pb.Mechanism{Mechanism: ep11.CKM_ECDSA},
 		PrivKey: privateKey,
@@ -604,7 +602,6 @@ func bip32SignAndVerify(cryptoClient pb.CryptoClient, privateKey []byte, publicK
 }
 
 func bip32SignAndVerifySingle(cryptoClient pb.CryptoClient, privateKey []byte, publicKey []byte) bool {
-
 	signData := sha256.New().Sum([]byte("This data needs to be signed"))
 	signSingleRequest := &pb.SignSingleRequest{
 		Mech:    &pb.Mechanism{Mechanism: ep11.CKM_ECDSA},
