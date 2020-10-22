@@ -18,6 +18,8 @@ import (
 	grpc "google.golang.org/grpc"
 )
 
+const hardened = 0x80000000 // For ED25519 only hardened key generation from Private parent key to private child key is supported.
+
 func Example_slip10DeriveKey() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
@@ -135,9 +137,9 @@ func slip10TestCurve(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier) {
 	generateKeyResponse, err := cryptoClient.GenerateKey(context.Background(), generateKeyRequest)
 	if err != nil {
 		panic(fmt.Errorf("Generic Secret Key error: %+v %s", generateKeyRequest, err))
-	} else {
-		fmt.Println("Generated Generic Secret Key")
 	}
+
+	fmt.Println("Generated Generic Secret Key")
 
 	masterSecretKey, masterChainCode := slip10DeriveKey(
 		cryptoClient,
@@ -150,7 +152,6 @@ func slip10TestCurve(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier) {
 
 	const maxDepth = 3
 	const maxChild = 3
-	const hardened = 0x80000000 // For ED25519 only hardened key generation from Private parent key to private child key is supported.
 	var privateKey [maxDepth][maxChild][]byte
 	var privateChainCode [maxDepth][maxChild][]byte
 	var publicKey [maxDepth][maxChild][]byte
@@ -247,10 +248,10 @@ func slip10DeriveKey(cryptoClient pb.CryptoClient, deriveType pb.BTCDeriveParm_B
 	deriveKeyResponse, err := cryptoClient.DeriveKey(context.Background(), deriveKeyRequest)
 	if err != nil {
 		panic(fmt.Errorf("Derived Child Key error: %+v error: %s", deriveKeyRequest, err))
-	} else {
-		fmt.Printf("Derived Key type=%s index=%d\n",
-			pb.BTCDeriveParm_BTCDeriveType_name[(int32)(deriveType)], childKeyIndex)
 	}
+
+	fmt.Printf("Derived Key type=%s index=%d\n",
+		pb.BTCDeriveParm_BTCDeriveType_name[(int32)(deriveType)], childKeyIndex)
 
 	return deriveKeyResponse.NewKeyBytes, deriveKeyResponse.CheckSum
 }
@@ -258,8 +259,7 @@ func slip10DeriveKey(cryptoClient pb.CryptoClient, deriveType pb.BTCDeriveParm_B
 func slip10SignAndVerify(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier, privateKey []byte, publicKey []byte) bool {
 	mech, err := util.GetSignMechanismFromOID(oid)
 	if err != nil {
-		fmt.Printf("Unexpected OID: %+v", oid)
-		return false
+		panic(fmt.Errorf("Unexpected OID: %+v", oid))
 	}
 
 	signInitRequest := &pb.SignInitRequest{
@@ -276,16 +276,10 @@ func slip10SignAndVerify(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier
 		Data:  signData,
 	}
 	signResponse, err := cryptoClient.Sign(context.Background(), signRequest)
-	for {
-		if err == nil {
-			break
-		}
-		fmt.Printf("Sign error: %s", err)
-		signResponse, err = cryptoClient.Sign(context.Background(), signRequest)
-	}
 	if err != nil {
 		panic(fmt.Errorf("Sign error: %s", err))
 	}
+
 	fmt.Println("Data signed")
 
 	// Modify signature to force returned error code
@@ -308,11 +302,11 @@ func slip10SignAndVerify(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier
 
 	if ok, ep11Status := util.Convert(err); !ok {
 		if ep11Status.Code == ep11.CKR_SIGNATURE_INVALID {
-			fmt.Printf("Invalid signature\n")
-			return false
+			panic(fmt.Errorf("Invalid signature"))
 		}
 		panic(fmt.Errorf("Verify error: [%d]: %s", ep11Status.Code, ep11Status.Detail))
 	}
+
 	fmt.Println("Signature verified")
 	return true
 }
@@ -320,8 +314,7 @@ func slip10SignAndVerify(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier
 func slip10DeriveKeySlip10SignAndVerifySingle(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier, privateKey []byte, publicKey []byte) bool {
 	mech, err := util.GetSignMechanismFromOID(oid)
 	if err != nil {
-		fmt.Printf("Unexpected OID: %+v", oid)
-		return false
+		panic(fmt.Errorf("Unexpected OID: %+v", oid))
 	}
 
 	signData := sha256.New().Sum([]byte("This data needs to be signed"))
@@ -333,9 +326,9 @@ func slip10DeriveKeySlip10SignAndVerifySingle(cryptoClient pb.CryptoClient, oid 
 	signSingleResponse, err := cryptoClient.SignSingle(context.Background(), signSingleRequest)
 	if err != nil {
 		panic(fmt.Errorf("SignSingle error: %s", err))
-	} else {
-		fmt.Println("Data signed")
 	}
+
+	fmt.Println("Data signed")
 
 	verifySingleRequest := &pb.VerifySingleRequest{
 		Mech:      &pb.Mechanism{Mechanism: mech},
@@ -351,6 +344,7 @@ func slip10DeriveKeySlip10SignAndVerifySingle(cryptoClient pb.CryptoClient, oid 
 			panic(fmt.Errorf("Verify error: [%d]: %s", ep11Status.Code, ep11Status.Detail))
 		}
 	}
+
 	fmt.Println("Signature verified")
 	return true
 }
@@ -387,11 +381,9 @@ func Example_slip10_invalid_signAndVerify() {
 	generateKeyResponse, err := cryptoClient.GenerateKey(context.Background(), generateKeyRequest)
 	if err != nil {
 		panic(fmt.Errorf("Generic Secret Key error: %+v %s", generateKeyRequest, err))
-	} else {
-		fmt.Println("Generated Generic Secret Key")
 	}
 
-	const hardened = 0x80000000
+	fmt.Println("Generated Generic Secret Key")
 
 	// Keys of NIST P-256
 	var publicKeyP256, privateKeyP256 []byte
@@ -478,8 +470,7 @@ func Example_slip10_invalid_signAndVerify() {
 func slip10SignAndVerifyCrossErr(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier, privateKey []byte, publicKey []byte) bool {
 	mech, err := util.GetSignMechanismFromOID(oid)
 	if err != nil {
-		fmt.Printf("Unexpected OID: %+v", oid)
-		return false
+		panic(fmt.Errorf("Unexpected OID: %+v", oid))
 	}
 
 	signInitRequest := &pb.SignInitRequest{
@@ -488,8 +479,7 @@ func slip10SignAndVerifyCrossErr(cryptoClient pb.CryptoClient, oid asn1.ObjectId
 	}
 	signInitResponse, err := cryptoClient.SignInit(context.Background(), signInitRequest)
 	if err != nil {
-		fmt.Printf("SignInit error with invalid Mechanism - %s\n", oid)
-		return false
+		panic(fmt.Errorf("SignInit error with invalid Mechanism - %s", oid))
 	}
 
 	signData := sha256.New().Sum([]byte("This data needs to be signed"))
@@ -498,20 +488,14 @@ func slip10SignAndVerifyCrossErr(cryptoClient pb.CryptoClient, oid asn1.ObjectId
 		Data:  signData,
 	}
 	signResponse, err := cryptoClient.Sign(context.Background(), signRequest)
-	for {
-		if err == nil {
-			break
-		}
-		fmt.Printf("Failed Sign [%s]", err)
-		signResponse, err = cryptoClient.Sign(context.Background(), signRequest)
-	}
 	if err != nil {
-		fmt.Printf("Sign error with invalid Mechanism - %s\n", oid)
+		panic(fmt.Errorf("Sign error with invalid Mechanism - %s", oid))
 	}
+
 	fmt.Println("Data signed")
 
 	// Modify signature to force returned error code
-	//SignResponse.Signature[0] = 255
+	// SignResponse.Signature[0] = 255
 
 	verifyInitRequest := &pb.VerifyInitRequest{
 		Mech:   &pb.Mechanism{Mechanism: mech},
@@ -519,8 +503,7 @@ func slip10SignAndVerifyCrossErr(cryptoClient pb.CryptoClient, oid asn1.ObjectId
 	}
 	verifyInitResponse, err := cryptoClient.VerifyInit(context.Background(), verifyInitRequest)
 	if err != nil {
-		fmt.Printf("VerifyInit error with invalid Mechanism - %s\n", oid)
-		return false
+		panic(fmt.Errorf("VerifyInit error with invalid Mechanism - %s", oid))
 	}
 	verifyRequest := &pb.VerifyRequest{
 		State:     verifyInitResponse.State,
@@ -531,11 +514,12 @@ func slip10SignAndVerifyCrossErr(cryptoClient pb.CryptoClient, oid asn1.ObjectId
 
 	if ok, ep11Status := util.Convert(err); !ok {
 		if ep11Status.Code == ep11.CKR_SIGNATURE_INVALID {
-			fmt.Printf("Invalid signature\n")
+			fmt.Println("Invalid signature")
 			return false
 		}
-		fmt.Printf("Signature error with invalid Mechanism - %s\n", oid)
+		panic(fmt.Errorf("Signature error with invalid Mechanism - %s", oid))
 	}
+
 	fmt.Println("Signature verified")
 	return true
 }
@@ -571,12 +555,10 @@ func Example_slip10_cross_signAndVerify() {
 	}
 	generateKeyResponse, err := cryptoClient.GenerateKey(context.Background(), generateKeyRequest)
 	if err != nil {
-		panic(fmt.Errorf("Generated Generic Secret Key error: %+v %s", generateKeyRequest, err))
-	} else {
-		fmt.Println("Generated Generic Secret Key")
+		panic(fmt.Errorf("Generic Secret Key error: %+v %s", generateKeyRequest, err))
 	}
 
-	const hardened = 0x80000000
+	fmt.Println("Generated Generic Secret Key")
 
 	//keys of NIST P-256
 	var publicKeyP256, privateKeyP256 []byte
@@ -660,8 +642,7 @@ func Example_slip10_cross_signAndVerify() {
 func slip10SignSingleAndVerify(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier, privateKey []byte, publicKey []byte) bool {
 	mech, err := util.GetSignMechanismFromOID(oid)
 	if err != nil {
-		fmt.Printf("Unexpected OID: %+v", oid)
-		return false
+		panic(fmt.Errorf("Unexpected OID: %+v", oid))
 	}
 
 	signData := sha256.New().Sum([]byte("This data needs to be signed"))
@@ -674,6 +655,7 @@ func slip10SignSingleAndVerify(cryptoClient pb.CryptoClient, oid asn1.ObjectIden
 	if err != nil {
 		panic(fmt.Errorf("SignSingle error: %s", err))
 	}
+
 	fmt.Printf("Data signed - %s\n", oid)
 
 	// Modify signature to force returned error code
@@ -696,11 +678,11 @@ func slip10SignSingleAndVerify(cryptoClient pb.CryptoClient, oid asn1.ObjectIden
 
 	if ok, ep11Status := util.Convert(err); !ok {
 		if ep11Status.Code == ep11.CKR_SIGNATURE_INVALID {
-			fmt.Printf("Invalid signature\n")
-			return false
+			panic(fmt.Errorf("Invalid signature"))
 		}
 		panic(fmt.Errorf("Verify error: %d: %s", ep11Status.Code, ep11Status.Detail))
 	}
+
 	fmt.Printf("Signature verified - %s\n", oid)
 	return true
 }
@@ -708,8 +690,7 @@ func slip10SignSingleAndVerify(cryptoClient pb.CryptoClient, oid asn1.ObjectIden
 func slip10SignAndVerifyInitAndSingle(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier, privateKey []byte, publicKey []byte) bool {
 	mech, err := util.GetSignMechanismFromOID(oid)
 	if err != nil {
-		fmt.Printf("Unexpected OID: %+v", oid)
-		return false
+		panic(fmt.Errorf("Unexpected OID: %+v", oid))
 	}
 
 	signInitRequest := &pb.SignInitRequest{
@@ -726,16 +707,10 @@ func slip10SignAndVerifyInitAndSingle(cryptoClient pb.CryptoClient, oid asn1.Obj
 		Data:  signData,
 	}
 	signResponse, err := cryptoClient.Sign(context.Background(), signRequest)
-	for {
-		if err == nil {
-			break
-		}
-		fmt.Printf("Sign failed: %s", err)
-		signResponse, err = cryptoClient.Sign(context.Background(), signRequest)
-	}
 	if err != nil {
 		panic(fmt.Errorf("Sign error: %s", err))
 	}
+
 	fmt.Printf("Data signed - %s\n", oid)
 
 	verifySingleRequest := &pb.VerifySingleRequest{
@@ -752,6 +727,7 @@ func slip10SignAndVerifyInitAndSingle(cryptoClient pb.CryptoClient, oid asn1.Obj
 			panic(fmt.Errorf("Verify error: [%d]: %s", ep11Status.Code, ep11Status.Detail))
 		}
 	}
+
 	fmt.Printf("Signature verified - %s\n", oid)
 	return true
 }

@@ -328,7 +328,7 @@ func Example_digest() {
 func Example_signAndVerifyUsingRSAKeyPair() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
-		panic(fmt.Errorf("did not connect: %v", err))
+		panic(fmt.Errorf("Could not connect to server: %v", err))
 	}
 	defer conn.Close()
 
@@ -418,7 +418,7 @@ func Example_signAndVerifyUsingRSAKeyPair() {
 func Example_signAndVerifyUsingDSAKeyPair() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
-		panic(fmt.Errorf("did not connect: %v", err))
+		panic(fmt.Errorf("Could not connect to server: %v", err))
 	}
 	defer conn.Close()
 
@@ -524,7 +524,7 @@ func Example_signAndVerifyUsingDSAKeyPair() {
 func Example_deriveKeyUsingDHKeyPair() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
-		panic(fmt.Errorf("did not connect: %v", err))
+		panic(fmt.Errorf("Could not connect to server: %v", err))
 	}
 	defer conn.Close()
 

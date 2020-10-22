@@ -29,7 +29,7 @@ func Example_bip32_Base() {
 	defer conn.Close()
 	cryptoClient := pb.NewCryptoClient(conn)
 
-	fmt.Printf("Generating random seed key...\n")
+	fmt.Println("Generating random seed key...")
 
 	keyTemplate := ep11.EP11Attributes{
 		ep11.CKA_KEY_TYPE:        ep11.CKK_GENERIC_SECRET,
@@ -71,7 +71,7 @@ func Example_bip32_Base() {
 	)
 	fmt.Println("Depth0: Generated master key from random seed and master chaincode")
 
-	fmt.Println("Depth1: Generating Wallets accounts...")
+	fmt.Println("Depth1: Generating wallet accounts...")
 	privateKey[0][0], privateChainCode[0][0] = bip32DeriveKey(
 		cryptoClient,
 		pb.BTCDeriveParm_CkBIP0032PRV2PRV,
@@ -87,9 +87,9 @@ func Example_bip32_Base() {
 		masterChainCode,
 	)
 
-	fmt.Println("Depth1: Generated external and internal Wallet accout")
+	fmt.Println("Depth1: Generated external and internal wallet accounts")
 
-	fmt.Println("Depth2: Generating Wallets chains...")
+	fmt.Println("Depth2: Generating wallet chains...")
 	privateKey[1][0], privateChainCode[1][0] = bip32DeriveKey(
 		cryptoClient,
 		pb.BTCDeriveParm_CkBIP0032PRV2PRV,
@@ -107,7 +107,7 @@ func Example_bip32_Base() {
 
 	fmt.Println("Depth2: Generated internal and external wallet chain successfully")
 
-	fmt.Println("Depth3: Generating Wallets addresses...")
+	fmt.Println("Depth3: Generating wallet addresses...")
 	privateKey[2][0], privateChainCode[2][0] = bip32DeriveKey(
 		cryptoClient,
 		pb.BTCDeriveParm_CkBIP0032PRV2PRV,
@@ -136,22 +136,22 @@ func Example_bip32_Base() {
 			bip32SignAndVerifySingle(cryptoClient, privateKey[depth][child], publicKey[depth][child])
 		}
 	}
-	fmt.Println("SignSingle and verifySingle")
+	fmt.Println("SignSingle and VerifySingle completed successfully")
 
 	// Output:
 	// Generating random seed key...
 	// Depth0: Generating master key and master chaincode...
 	// Derived Key type=CkBIP0032MASTERK index=0
 	// Depth0: Generated master key from random seed and master chaincode
-	// Depth1: Generating Wallets accounts...
+	// Depth1: Generating wallet accounts...
 	// Derived Key type=CkBIP0032PRV2PRV index=0
 	// Derived Key type=CkBIP0032PRV2PUB index=0
-	// Depth1: Generated external and internal Wallet accout
-	// Depth2: Generating Wallets chains...
+	// Depth1: Generated external and internal wallet accounts
+	// Depth2: Generating wallet chains...
 	// Derived Key type=CkBIP0032PRV2PRV index=0
 	// Derived Key type=CkBIP0032PRV2PUB index=0
 	// Depth2: Generated internal and external wallet chain successfully
-	// Depth3: Generating Wallets addresses...
+	// Depth3: Generating wallet addresses...
 	// Derived Key type=CkBIP0032PRV2PRV index=0
 	// Derived Key type=CkBIP0032PRV2PUB index=0
 	// Depth3: Generated external and internal addresses successfully.
@@ -168,7 +168,7 @@ func Example_bip32_Base() {
 	// Signature verified
 	// Data signed
 	// Signature verified
-	// SignSingle and verifySingle
+	// SignSingle and VerifySingle completed successfully
 }
 
 // Example_bip32_KeyDerivation covers private->private public->public key derivations
@@ -180,7 +180,7 @@ func Example_bip32_KeyDerivation() {
 	defer conn.Close()
 	cryptoClient := pb.NewCryptoClient(conn)
 
-	fmt.Printf("Generating random seed key...\n")
+	fmt.Println("Generating random seed key...")
 
 	keyTemplate := ep11.EP11Attributes{
 		ep11.CKA_KEY_TYPE:        ep11.CKK_GENERIC_SECRET,
@@ -217,7 +217,7 @@ func Example_bip32_KeyDerivation() {
 	)
 	fmt.Println("Generated master key from random seed and master chaincode")
 
-	fmt.Println("Generating Wallets accounts...")
+	fmt.Println("Generating wallet accounts...")
 	publicKey, publicChainCode = bip32DeriveKey(
 		cryptoClient,
 		pb.BTCDeriveParm_CkBIP0032PRV2PUB,
@@ -225,7 +225,7 @@ func Example_bip32_KeyDerivation() {
 		masterSecretKey,
 		masterChainCode,
 	)
-	fmt.Println("Derive key from private -> public")
+	fmt.Println("Derived key from private -> public")
 
 	privKeyTemplate := ep11.EP11Attributes{
 		ep11.CKA_VERIFY:          true,
@@ -253,9 +253,9 @@ func Example_bip32_KeyDerivation() {
 	}
 	_, err = cryptoClient.DeriveKey(context.Background(), deriveKeyRequestPri)
 	if err != nil {
-		fmt.Println("Don't supporte deriving key from pulic to public in current soft-hsm version")
+		fmt.Println("Deriving keys from public to public is currently not supported")
 	} else {
-		fmt.Println("Derive key from private -> private")
+		fmt.Println("Derived key from private -> private")
 	}
 
 	pubKeyTemplate := ep11.EP11Attributes{
@@ -284,9 +284,9 @@ func Example_bip32_KeyDerivation() {
 	}
 	deriveKeyResponsePub, err := cryptoClient.DeriveKey(context.Background(), deriveKeyRequestPub)
 	if err != nil {
-		fmt.Println("Don't supporte deriving key from pulic -> public in current soft-hsm version")
+		fmt.Println("Deriving keys from public to public is currently not supported")
 	} else {
-		fmt.Printf("Derive key from public to public successfully %v", deriveKeyResponsePub)
+		fmt.Printf("Derived key from public to public successfully: %v", deriveKeyResponsePub)
 	}
 
 	// Output:
@@ -294,11 +294,11 @@ func Example_bip32_KeyDerivation() {
 	// Generating master key and master chaincode...
 	// Derived Key type=CkBIP0032MASTERK index=0
 	// Generated master key from random seed and master chaincode
-	// Generating Wallets accounts...
+	// Generating wallet accounts...
 	// Derived Key type=CkBIP0032PRV2PUB index=0
-	// Derive key from private -> public
-	// Derive key from private -> private
-	// Don't supporte deriving key from pulic -> public in current soft-hsm version
+	// Derived key from private -> public
+	// Derived key from private -> private
+	// Deriving keys from public to public is currently not supported
 }
 
 // Example_bip32_Cross_SignVerify performs cross sign and verification operations
@@ -310,7 +310,7 @@ func Example_bip32_Cross_SignVerify() {
 	defer conn.Close()
 	cryptoClient := pb.NewCryptoClient(conn)
 
-	fmt.Printf("Generating random seed key...\n")
+	fmt.Println("Generating random seed key...")
 
 	keyTemplate := ep11.EP11Attributes{
 		ep11.CKA_KEY_TYPE:        ep11.CKK_GENERIC_SECRET,
@@ -331,7 +331,7 @@ func Example_bip32_Cross_SignVerify() {
 	}
 	generateKeyResponse, err := cryptoClient.GenerateKey(context.Background(), generateKeyRequest)
 	if err != nil {
-		panic(fmt.Errorf("Generated Generic Secret Key error: %+v %s", generateKeyRequest, err))
+		panic(fmt.Errorf("Generic Secret Key error: %+v %s", generateKeyRequest, err))
 	}
 
 	fmt.Println("Generating master key and master chaincode...")
@@ -363,7 +363,7 @@ func Example_bip32_Cross_SignVerify() {
 		masterSecretKey,
 		masterChainCode,
 	)
-	fmt.Println("Depth1: Generated external and internal Wallet accout")
+	fmt.Println("Depth1: Generated external and internal wallet accounts")
 	bip32SignAndVerifySingle(cryptoClient, privateKeyW[0], publicKeyW[0])
 
 	privateKeyW[1], privateKeyChainCodeW[1] = bip32DeriveKey(
@@ -488,7 +488,7 @@ func Example_bip32_Cross_SignVerify() {
 	// Generated master key from random seed and master chaincode
 	// Derived Key type=CkBIP0032PRV2PRV index=0
 	// Derived Key type=CkBIP0032PRV2PUB index=0
-	// Depth1: Generated external and internal Wallet accout
+	// Depth1: Generated external and internal wallet accounts
 	// Data signed
 	// Signature verified
 	// Derived Key type=CkBIP0032PRV2PRV index=0
@@ -560,13 +560,6 @@ func bip32SignAndVerify(cryptoClient pb.CryptoClient, privateKey []byte, publicK
 		Data:  signData,
 	}
 	signResponse, err := cryptoClient.Sign(context.Background(), signRequest)
-	for {
-		if err == nil {
-			break
-		}
-		fmt.Printf("Failed Sign [%s]", err)
-		signResponse, err = cryptoClient.Sign(context.Background(), signRequest)
-	}
 	if err != nil {
 		panic(fmt.Errorf("Sign error: %s", err))
 	}
@@ -592,8 +585,7 @@ func bip32SignAndVerify(cryptoClient pb.CryptoClient, privateKey []byte, publicK
 
 	if ok, ep11Status := util.Convert(err); !ok {
 		if ep11Status.Code == ep11.CKR_SIGNATURE_INVALID {
-			fmt.Printf("Invalid signature\n")
-			return false
+			panic(fmt.Errorf("Invalid signature"))
 		}
 		panic(fmt.Errorf("Verify error: [%d]: %s", ep11Status.Code, ep11Status.Detail))
 	}
