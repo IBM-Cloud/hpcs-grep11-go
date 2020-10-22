@@ -1,16 +1,16 @@
 # Overview
 
-This repository contains software to be used to connect to the **IBM Cloud Hyper Protect Crypto Services**  offering. For more information regarding this service please review the [IBM Cloud Hyper Protect Services documentation](https://cloud.ibm.com/docs/services/hs-crypto?topic=hs-crypto-get-started). The package contained within this repository uses go modules, and therefore, this repository can be cloned into any local directory; there is no need to place it within your `GOPATH`.
+This repository contains software used to connect and interact with the **IBM Cloud Hyper Protect Crypto Services**  offering. For more information regarding this service please review the [IBM Cloud Hyper Protect Services documentation](https://cloud.ibm.com/docs/services/hs-crypto?topic=hs-crypto-get-started). The contents of this repository use go modules, and therefore, this repository can be cloned into any local directory; there is no need to place it in your `GOPATH`.
 
 # Contents
 
 The contents of this repository are offered *as-is* and is subject to change at anytime.
 
-For general information about "Enterprise PKCS #11 over gRPC" please see the official [documentation](https://cloud.ibm.com/docs/services/hs-crypto?topic=hs-crypto-enterprise_PKCS11_overview#grep11_intro)
+For general information about "Enterprise PKCS #11 over gRPC" please see the official [documentation](https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-introduce-cloud-hsm#access-cloud-hsm-pkcs11)
 
 # Code Examples
 
-Included in this repository are working examples written in Go. The examples show how to use the **IBM Cloud Hyper Protect Services offering** to accomplish the following functions:
+Included in this repository are working examples written in Go. The examples show how to use the **IBM Cloud Hyper Protect Services offering** to accomplish the following operations:
 
 * Key generation
 * Encrypt and decrypt
@@ -27,7 +27,7 @@ Included in this repository are working examples written in Go. The examples sho
 2. Clone this repository into a local directory of your choice. Go modules are used for this
    repository, so there is no need to place the cloned repository in your `GOPATH`.
 
-3. Update the following information in the [examples/server_test.go](examples/server_test.go#L30) file.  
+3. Update the following information in the [examples/server_test.go](examples/server_test.go#L35-L44) file.  
 
 	*NOTE: This information can obtained by logging in to your IBM Cloud account and viewing your Hyper Protect Crypto Serverices instance and IAM information. See the [GREP11 API documentation](https://cloud.ibm.com/docs/services/hs-crypto?topic=hs-crypto-grep11-api-ref) for more information about GREP11*.
 
@@ -45,11 +45,10 @@ Included in this repository are working examples written in Go. The examples sho
 	}
 	```
 		
-4. Change your working directory (cd) to `<path>/hpcs-grep11-go/examples`
 
-5. Execute the examples by issuing the command: `go test -v`
+4. From the `<path>/hpcs-grep11-go/examples` directory, execute the examples by issuing the command: `go test -v`
 
-6. The sample program produces output similar to the following:
+5. The sample program produces output similar to the following:
 
     ```=== RUN   Test_rewrapKeyBlob
     server_test.go:1144: 
