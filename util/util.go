@@ -151,9 +151,9 @@ var (
 	OIDNamedCurveP256      = asn1.ObjectIdentifier{1, 2, 840, 10045, 3, 1, 7}
 	OIDNamedCurveP384      = asn1.ObjectIdentifier{1, 3, 132, 0, 34}
 	OIDNamedCurveP521      = asn1.ObjectIdentifier{1, 3, 132, 0, 35}
-	oidECPublicKey         = asn1.ObjectIdentifier{1, 2, 840, 10045, 2, 1}
-	oidRSAPublicKey        = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1}
-	oidDHPublicKey         = asn1.ObjectIdentifier{1, 2, 840, 10046, 2}
+	OIDECPublicKey         = asn1.ObjectIdentifier{1, 2, 840, 10045, 2, 1}
+	OIDRSAPublicKey        = asn1.ObjectIdentifier{1, 2, 840, 113549, 1, 1, 1}
+	OIDDHPublicKey         = asn1.ObjectIdentifier{1, 2, 840, 10046, 2}
 	OIDNamedCurveSecp256k1 = asn1.ObjectIdentifier{1, 3, 132, 0, 10}
 	OIDNamedCurveED25519   = asn1.ObjectIdentifier{1, 3, 101, 112}
 )
@@ -184,6 +184,11 @@ func GetSignMechanismFromOID(oid asn1.ObjectIdentifier) (ep11.Mechanism, error) 
 		return ep11.CKM_ECDSA, nil
 	}
 	return 0, fmt.Errorf("Unexpected OID: %+v", oid)
+}
+
+// SetMechParm is a helper function that returns a properly formatted mechanism parameter for byte slice parameters
+func SetMechParm(parm []byte) *pb.Mechanism_ParameterB {
+	return &pb.Mechanism_ParameterB{ParameterB: parm}
 }
 
 // ecKeyIdentificationASN defines the ECDSA priviate/public key identifier for GREP11
@@ -234,7 +239,7 @@ func GetPubKey(spki []byte) (crypto.PublicKey, asn1.ObjectIdentifier, error) {
 		return nil, nil, fmt.Errorf("Failed unmarshaling public key: %s", err)
 	}
 
-	if firstDecode.OIDAlgorithm.KeyType.Equal(oidECPublicKey) {
+	if firstDecode.OIDAlgorithm.KeyType.Equal(OIDECPublicKey) {
 		decode := &ecPubKeyASN{}
 		_, err := asn1.Unmarshal(spki, decode)
 		if err != nil {
@@ -248,9 +253,9 @@ func GetPubKey(spki []byte) (crypto.PublicKey, asn1.ObjectIdentifier, error) {
 		if x == nil {
 			return nil, nil, fmt.Errorf("failed unmarshalling public key.\n%s", hex.Dump(decode.Point.Bytes))
 		}
-		return &ecdsa.PublicKey{Curve: curve, X: x, Y: y}, asn1.ObjectIdentifier(oidECPublicKey), nil
+		return &ecdsa.PublicKey{Curve: curve, X: x, Y: y}, asn1.ObjectIdentifier(OIDECPublicKey), nil
 
-	} else if firstDecode.OIDAlgorithm.KeyType.Equal(oidRSAPublicKey) {
+	} else if firstDecode.OIDAlgorithm.KeyType.Equal(OIDRSAPublicKey) {
 		return nil, nil, fmt.Errorf("RSA public key not supported yet")
 	} else {
 		return nil, nil, fmt.Errorf("Unrecognized public key type %v", firstDecode.OIDAlgorithm)

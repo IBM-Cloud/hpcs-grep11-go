@@ -132,6 +132,16 @@ service Crypto {
 	//     target_t target) ;
 	rpc DecryptSingle(DecryptSingleRequest) returns (DecryptSingleResponse) {}
 
+	// CK_RV m_ReencryptSingle (
+	//     const unsigned char *decKey, size_t decKeylen,
+	//     const unsigned char *encKey, size_t encKeylen,
+	//     CK_MECHANISM_PTR decMech,
+	//     CK_MECHANISM_PTR encMech,
+	//     CK_BYTE_PTR ciphered, CK_ULONG cipheredlen,
+	//     CK_BYTE_PTR reciphered, CK_ULONG_PTR recipheredlen,
+	//     target_t target) ;
+	rpc ReencryptSingle(ReencryptSingleRequest) returns (ReencryptSingleResponse) {}
+
 	// CK_RV m_SignInit (
 	//     unsigned char *state, size_t *statelen,
 	//     CK_MECHANISM_PTR mech,
@@ -277,7 +287,6 @@ service Crypto {
 	rpc SetAttributeValue(SetAttributeValueRequest) returns (SetAttributeValueResponse) {}
 
     rpc RewrapKeyBlob (RewrapKeyBlobRequest) returns (RewrapKeyBlobResponse) {}
-    rpc ReEncrypt (ReEncryptRequest) returns (ReEncryptResponse) {}
 }
 
 message GenerateRandomRequest {
@@ -430,6 +439,18 @@ message DecryptSingleRequest {
 
 message DecryptSingleResponse {
 	bytes Plain = 4;
+}
+
+message ReencryptSingleRequest {
+	bytes DecKey = 1;
+	bytes EncKey = 2;
+	Mechanism DecMech = 3;
+	Mechanism EncMech = 4;
+	bytes Ciphered = 5;
+}
+
+message ReencryptSingleResponse {
+	bytes Reciphered = 6;
 }
 
 message SignInitRequest {
@@ -718,14 +739,6 @@ message BTCDeriveParm {
 
 message HMACGeneralParm {
 	uint32 ReturnByteCount = 1;
-}
-
-message ReEncryptRequest {
-	bytes WrappedKey = 1;
-}
-
-message ReEncryptResponse {
-	bytes RewrappedKey = 1;
 }
 
 message RewrapKeyBlobRequest {

@@ -33,7 +33,7 @@ func (priv *EP11PrivateKey) Sign(rand io.Reader, digest []byte, opts crypto.Sign
 	type ecdsaSignature struct {
 		R, S *big.Int
 	}
-	if priv.algorithmOID.Equal(oidECPublicKey) {
+	if priv.algorithmOID.Equal(OIDECPublicKey) {
 		SignSingleRequest := &pb.SignSingleRequest{
 			Mech:    &pb.Mechanism{Mechanism: ep11.CKM_ECDSA},
 			PrivKey: priv.keyBlob,
@@ -54,7 +54,7 @@ func (priv *EP11PrivateKey) Sign(rand io.Reader, digest []byte, opts crypto.Sign
 		r.SetBytes(SignSingleResponse.Signature[0 : sigLen/2])
 		s.SetBytes(SignSingleResponse.Signature[sigLen/2:])
 		return asn1.Marshal(ecdsaSignature{r, s})
-	} else if priv.algorithmOID.Equal(oidRSAPublicKey) {
+	} else if priv.algorithmOID.Equal(OIDRSAPublicKey) {
 		return nil, fmt.Errorf("RSA public key is currently not supported")
 	} else {
 		return nil, fmt.Errorf("Unsupported Public key type: %v", priv.algorithmOID)

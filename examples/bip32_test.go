@@ -18,9 +18,9 @@ import (
 )
 
 // Example_bip32_Base
-// Flow: generate 256 random seed - secp256k1 => generate master node => derive master key m => derive wallet account key m/0
+// Flow: generate 256 bit random seed => generate master node => derive master key m => derive wallet account key m/0
 // => derive wallet chain keypair m/0/0 => derive address key m/0/0/0 => sign/verify ECDSA
-// => base test cover private->private private->public key derivation
+// => base test covers private->private private->public key derivation
 func Example_bip32_Base() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {

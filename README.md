@@ -46,59 +46,53 @@ Included in this repository are working examples written in Go. The examples sho
 	```
 		
 
-4. From the `<path>/hpcs-grep11-go/examples` directory, execute the examples by issuing the command: `go test -v`
+4. From the `<path>/hpcs-grep11-go/examples` directory, execute the examples by issuing the command: `go test -v -run Example`
 
 5. The sample program produces output similar to the following:
 
-    ```=== RUN   Test_rewrapKeyBlob
-    server_test.go:1144: 
-         
-        Skipping the rewrapKeyBlob test. To enable, comment out the t.Skipf and message lines within the Test_rewrapKeyBlob test
-        
-        NOTE: This test contains two pauses that require the user to type CTRL-c after ensuring
-              that the stated pre-requisite activity has been completed.  There needs to be 
-              coordination with your HPCS cloud service contact in order to place your HSM
-              into the required states.
-         
-    --- SKIP: Test_rewrapKeyBlob (0.00s)
+    ```
     === RUN   Example_bip32_Base
-    --- PASS: Example_bip32_Base (1.46s)
+    --- PASS: Example_bip32_Base (4.12s)
     === RUN   Example_bip32_KeyDerivation
-    --- PASS: Example_bip32_KeyDerivation (0.15s)
+    --- PASS: Example_bip32_KeyDerivation (0.19s)
     === RUN   Example_bip32_Cross_SignVerify
-    --- PASS: Example_bip32_Cross_SignVerify (0.53s)
+    --- PASS: Example_bip32_Cross_SignVerify (0.65s)
+    === RUN   Example_signAndVerifyUsingECKeyPairWithEdwardsCurve
+    --- PASS: Example_signAndVerifyUsingECKeyPairWithEdwardsCurve (0.20s)
+    === RUN   Example_signAndVerifyEP11SingleUsingECKeyPairWithEdwardsCurve
+    --- PASS: Example_signAndVerifyEP11SingleUsingECKeyPairWithEdwardsCurve (0.15s)
     === RUN   Example_getMechanismInfo
-    --- PASS: Example_getMechanismInfo (0.08s)
+    --- PASS: Example_getMechanismInfo (0.11s)
     === RUN   Example_generateGenericKey
-    --- PASS: Example_generateGenericKey (0.07s)
+    --- PASS: Example_generateGenericKey (0.09s)
     === RUN   Example_encryptAndDecryptUsingAES
-    --- PASS: Example_encryptAndDecryptUsingAES (0.21s)
+    --- PASS: Example_encryptAndDecryptUsingAES (0.28s)
     === RUN   Example_digest
-    --- PASS: Example_digest (0.15s)
+    --- PASS: Example_digest (0.18s)
     === RUN   Example_signAndVerifyUsingRSAKeyPair
-    --- PASS: Example_signAndVerifyUsingRSAKeyPair (0.18s)
+    --- PASS: Example_signAndVerifyUsingRSAKeyPair (0.21s)
     === RUN   Example_signAndVerifyUsingDSAKeyPair
-    --- PASS: Example_signAndVerifyUsingDSAKeyPair (1.08s)
+    --- PASS: Example_signAndVerifyUsingDSAKeyPair (0.99s)
     === RUN   Example_deriveKeyUsingDHKeyPair
-    --- PASS: Example_deriveKeyUsingDHKeyPair (1.97s)
+    --- PASS: Example_deriveKeyUsingDHKeyPair (0.64s)
     === RUN   Example_signAndVerifyUsingECDSAKeyPair
-    --- PASS: Example_signAndVerifyUsingECDSAKeyPair (0.13s)
+    --- PASS: Example_signAndVerifyUsingECDSAKeyPair (0.16s)
     === RUN   Example_signAndVerifyToTestErrorHandling
-    --- PASS: Example_signAndVerifyToTestErrorHandling (0.13s)
+    --- PASS: Example_signAndVerifyToTestErrorHandling (0.16s)
     === RUN   Example_wrapAndUnwrapKey
-    --- PASS: Example_wrapAndUnwrapKey (0.17s)
+    --- PASS: Example_wrapAndUnwrapKey (0.20s)
     === RUN   Example_deriveKey
-    --- PASS: Example_deriveKey (0.18s)
+    --- PASS: Example_deriveKey (0.22s)
+    === RUN   Example_reencryptSingle
+    --- PASS: Example_reencryptSingle (0.19s)
     === RUN   Example_slip10DeriveKey
-    --- PASS: Example_slip10DeriveKey (1.64s)
-    === RUN   Example_slip10_invalid_signAndVerify
-    --- PASS: Example_slip10_invalid_signAndVerify (0.48s)
-    === RUN   Example_slip10_cross_signAndVerify
-    --- PASS: Example_slip10_cross_signAndVerify (0.43s)
+    --- PASS: Example_slip10DeriveKey (2.98s)
+    === RUN   Example_slip10CrossSignAndVerify
+    --- PASS: Example_slip10CrossSignAndVerify (0.74s)
     === RUN   Example_tls
-    --- PASS: Example_tls (0.11s)
+    --- PASS: Example_tls (0.14s)
     PASS
-    ok      github.com/IBM-Cloud/hpcs-grep11-go/examples    12.633s
+    ok      github.com/IBM-Cloud/hpcs-grep11-go/examples    13.106s
     ```
 
 **NOTE:** By default the rewrapKeyBlob test is skipped.  This test acts as sample code that can be used to reencrypt your existing keys with a new HSM wrapping key.  See figure 8 on page 27 and page 37 in https://www.ibm.com/downloads/cas/WXRDPRAN for additional information on how existing keys can be reencrypted.  This operation requires coordination between the end-user and the **IBM Cloud Hyper Protect Crypto Services** instance's administrator(s).

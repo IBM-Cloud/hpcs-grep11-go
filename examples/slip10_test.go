@@ -20,6 +20,8 @@ import (
 
 const hardened = 0x80000000 // For ED25519 only hardened key generation from Private parent key to private child key is supported.
 
+// Example_slip10DeriveKey derives sets of privte/public key pairs using SLIP10
+// Flow: connect, generate generic secret key, derive keys using SLIP10, and validates the derived keys by signing and verifying data
 func Example_slip10DeriveKey() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
@@ -28,8 +30,8 @@ func Example_slip10DeriveKey() {
 	defer conn.Close()
 	cryptoClient := pb.NewCryptoClient(conn)
 
-	// SLIP10 has been verified for NIST P-256 and Secp256k1
-	supportedCurves := []asn1.ObjectIdentifier{util.OIDNamedCurveP256, util.OIDNamedCurveSecp256k1}
+	// SLIP10 has been verified for NIST P-256, Secp256k1 and Ed25519
+	supportedCurves := []asn1.ObjectIdentifier{util.OIDNamedCurveP256, util.OIDNamedCurveSecp256k1, util.OIDNamedCurveED25519}
 	for _, oid := range supportedCurves {
 		fmt.Printf("Curve: %+v\n", oid)
 		slip10TestCurve(cryptoClient, oid)
@@ -114,6 +116,45 @@ func Example_slip10DeriveKey() {
 	// Signature verified
 	// Data signed
 	// Signature verified
+	// Curve: 1.3.101.112
+	// Generated Generic Secret Key
+	// Derived Key type=CkSLIP0010MASTERK index=0
+	// Derived Key type=CkSLIP0010PRV2PRV index=2147483648
+	// Derived Key type=CkSLIP0010PRV2PUB index=2147483648
+	// Derived Key type=CkSLIP0010PRV2PRV index=2147483649
+	// Derived Key type=CkSLIP0010PRV2PUB index=2147483649
+	// Derived Key type=CkSLIP0010PRV2PRV index=2147483650
+	// Derived Key type=CkSLIP0010PRV2PUB index=2147483650
+	// Derived Key type=CkSLIP0010PRV2PRV index=2147483648
+	// Derived Key type=CkSLIP0010PRV2PUB index=2147483648
+	// Derived Key type=CkSLIP0010PRV2PRV index=2147483649
+	// Derived Key type=CkSLIP0010PRV2PUB index=2147483649
+	// Derived Key type=CkSLIP0010PRV2PRV index=2147483650
+	// Derived Key type=CkSLIP0010PRV2PUB index=2147483650
+	// Derived Key type=CkSLIP0010PRV2PRV index=2147483648
+	// Derived Key type=CkSLIP0010PRV2PUB index=2147483648
+	// Derived Key type=CkSLIP0010PRV2PRV index=2147483649
+	// Derived Key type=CkSLIP0010PRV2PUB index=2147483649
+	// Derived Key type=CkSLIP0010PRV2PRV index=2147483650
+	// Derived Key type=CkSLIP0010PRV2PUB index=2147483650
+	// Data signed
+	// Signature verified
+	// Data signed
+	// Signature verified
+	// Data signed
+	// Signature verified
+	// Data signed
+	// Signature verified
+	// Data signed
+	// Signature verified
+	// Data signed
+	// Signature verified
+	// Data signed
+	// Signature verified
+	// Data signed
+	// Signature verified
+	// Data signed
+	// Signature verified
 }
 
 func slip10TestCurve(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier) {
@@ -123,7 +164,7 @@ func slip10TestCurve(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier) {
 			ep11.EP11Attributes{
 				ep11.CKA_KEY_TYPE:        ep11.CKK_GENERIC_SECRET,
 				ep11.CKA_CLASS:           ep11.CKO_SECRET_KEY,
-				ep11.CKA_VALUE_LEN:       (uint64)(256 / 8),
+				ep11.CKA_VALUE_LEN:       256 / 8,
 				ep11.CKA_WRAP:            false,
 				ep11.CKA_UNWRAP:          false,
 				ep11.CKA_SIGN:            true,
@@ -238,7 +279,7 @@ func slip10DeriveKey(cryptoClient pb.CryptoClient, deriveType pb.BTCDeriveParm_B
 				ep11.CKA_EXTRACTABLE:     false,
 				ep11.CKA_DERIVE:          true,
 				ep11.CKA_KEY_TYPE:        ep11.CKK_ECDSA,
-				ep11.CKA_VALUE_LEN:       (uint64)(0),
+				ep11.CKA_VALUE_LEN:       0,
 				ep11.CKA_IBM_USE_AS_DATA: true,
 				ep11.CKA_EC_PARAMS:       ecParameters,
 			},
@@ -281,9 +322,6 @@ func slip10SignAndVerify(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier
 	}
 
 	fmt.Println("Data signed")
-
-	// Modify signature to force returned error code
-	// SignResponse.Signature[0] = 255
 
 	verifyInitRequest := &pb.VerifyInitRequest{
 		Mech:   &pb.Mechanism{Mechanism: mech},
@@ -349,7 +387,9 @@ func slip10DeriveKeySlip10SignAndVerifySingle(cryptoClient pb.CryptoClient, oid 
 	return true
 }
 
-func Example_slip10_invalid_signAndVerify() {
+// Example_slip10CrossSignAndVerify derives sets of private/public key pairs using SLIP10
+// Flow: connect, generate generic secret key, derive keys using SLIP10, and validates the derived keys by signing and verifying data
+func Example_slip10CrossSignAndVerify() {
 	conn, err := grpc.Dial(address, callOpts...)
 	if err != nil {
 		panic(fmt.Errorf("Could not connect to server: %s", err))
@@ -357,17 +397,17 @@ func Example_slip10_invalid_signAndVerify() {
 	defer conn.Close()
 	cryptoClient := pb.NewCryptoClient(conn)
 
-	// SLIP10 has been verified for NIST P-256 and Secp256k1
-	// util.OIDNamedCurveP256 and util.OIDNamedCurveSecp256k119
+	// SLIP10 has been verified for NIST P-256, Secp256k1 and Ed25519
+	// util.OIDNamedCurveP256, util.OIDNamedCurveSecp256k1, util.OIDNamedCurveED25519
 
-	//generate random seed key
+	// Generate a random seed key
 	generateKeyRequest := &pb.GenerateKeyRequest{
 		Mech: &pb.Mechanism{Mechanism: ep11.CKM_GENERIC_SECRET_KEY_GEN},
 		Template: util.AttributeMap(
 			ep11.EP11Attributes{
 				ep11.CKA_KEY_TYPE:        ep11.CKK_GENERIC_SECRET,
 				ep11.CKA_CLASS:           ep11.CKO_SECRET_KEY,
-				ep11.CKA_VALUE_LEN:       (uint64)(256 / 8),
+				ep11.CKA_VALUE_LEN:       256 / 8,
 				ep11.CKA_WRAP:            false,
 				ep11.CKA_UNWRAP:          false,
 				ep11.CKA_SIGN:            true,
@@ -439,187 +479,41 @@ func Example_slip10_invalid_signAndVerify() {
 		masterChainCode256k1,
 	)
 
-	// Invalid sign with incorrect curve - NIST P-256 curve
-	slip10SignAndVerifyCrossErr(cryptoClient, util.OIDNamedCurveP256, privateKeyP256, publicKeyP256)
-
-	// Invalid sign with incorrect curve - secp256k1 curve
-	slip10SignAndVerifyCrossErr(cryptoClient, util.OIDNamedCurveSecp256k1, privateKey256k1, publicKey256k1)
-
-	// Invalid verification
-	slip10SignAndVerifyCrossErr(cryptoClient, util.OIDNamedCurveP256, privateKeyP256, publicKey256k1)
-	slip10SignAndVerifyCrossErr(cryptoClient, util.OIDNamedCurveSecp256k1, privateKey256k1, publicKeyP256)
-
-	// Output:
-	// Generated Generic Secret Key
-	// Derived Key type=CkSLIP0010MASTERK index=0
-	// Derived Key type=CkSLIP0010PRV2PRV index=2147483648
-	// Derived Key type=CkSLIP0010PRV2PUB index=2147483648
-	// Derived Key type=CkSLIP0010MASTERK index=0
-	// Derived Key type=CkSLIP0010PRV2PRV index=2147483648
-	// Derived Key type=CkSLIP0010PRV2PUB index=2147483648
-	// Data signed
-	// Signature verified
-	// Data signed
-	// Signature verified
-	// Data signed
-	// Invalid signature
-	// Data signed
-	// Invalid signature
-}
-
-func slip10SignAndVerifyCrossErr(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier, privateKey []byte, publicKey []byte) bool {
-	mech, err := util.GetSignMechanismFromOID(oid)
-	if err != nil {
-		panic(fmt.Errorf("Unexpected OID: %+v", oid))
-	}
-
-	signInitRequest := &pb.SignInitRequest{
-		Mech:    &pb.Mechanism{Mechanism: mech},
-		PrivKey: privateKey,
-	}
-	signInitResponse, err := cryptoClient.SignInit(context.Background(), signInitRequest)
-	if err != nil {
-		panic(fmt.Errorf("SignInit error with invalid Mechanism - %s", oid))
-	}
-
-	signData := sha256.New().Sum([]byte("This data needs to be signed"))
-	signRequest := &pb.SignRequest{
-		State: signInitResponse.State,
-		Data:  signData,
-	}
-	signResponse, err := cryptoClient.Sign(context.Background(), signRequest)
-	if err != nil {
-		panic(fmt.Errorf("Sign error with invalid Mechanism - %s", oid))
-	}
-
-	fmt.Println("Data signed")
-
-	// Modify signature to force returned error code
-	// SignResponse.Signature[0] = 255
-
-	verifyInitRequest := &pb.VerifyInitRequest{
-		Mech:   &pb.Mechanism{Mechanism: mech},
-		PubKey: publicKey,
-	}
-	verifyInitResponse, err := cryptoClient.VerifyInit(context.Background(), verifyInitRequest)
-	if err != nil {
-		panic(fmt.Errorf("VerifyInit error with invalid Mechanism - %s", oid))
-	}
-	verifyRequest := &pb.VerifyRequest{
-		State:     verifyInitResponse.State,
-		Data:      signData,
-		Signature: signResponse.Signature,
-	}
-	_, err = cryptoClient.Verify(context.Background(), verifyRequest)
-
-	if ok, ep11Status := util.Convert(err); !ok {
-		if ep11Status.Code == ep11.CKR_SIGNATURE_INVALID {
-			fmt.Println("Invalid signature")
-			return false
-		}
-		panic(fmt.Errorf("Signature error with invalid Mechanism - %s", oid))
-	}
-
-	fmt.Println("Signature verified")
-	return true
-}
-
-func Example_slip10_cross_signAndVerify() {
-	conn, err := grpc.Dial(address, callOpts...)
-	if err != nil {
-		panic(fmt.Errorf("Could not connect to server: %s", err))
-	}
-	defer conn.Close()
-	cryptoClient := pb.NewCryptoClient(conn)
-
-	// SLIP10 has been verified for NIST P-256 and Secp256k1
-	// util.OIDNamedCurveP256 and util.OIDNamedCurveSecp256k1
-
-	// Generate a random seed key
-	generateKeyRequest := &pb.GenerateKeyRequest{
-		Mech: &pb.Mechanism{Mechanism: ep11.CKM_GENERIC_SECRET_KEY_GEN},
-		Template: util.AttributeMap(
-			ep11.EP11Attributes{
-				ep11.CKA_KEY_TYPE:        ep11.CKK_GENERIC_SECRET,
-				ep11.CKA_CLASS:           ep11.CKO_SECRET_KEY,
-				ep11.CKA_VALUE_LEN:       (uint64)(256 / 8),
-				ep11.CKA_WRAP:            false,
-				ep11.CKA_UNWRAP:          false,
-				ep11.CKA_SIGN:            true,
-				ep11.CKA_VERIFY:          true,
-				ep11.CKA_EXTRACTABLE:     false,
-				ep11.CKA_DERIVE:          true,
-				ep11.CKA_IBM_USE_AS_DATA: true,
-			},
-		),
-	}
-	generateKeyResponse, err := cryptoClient.GenerateKey(context.Background(), generateKeyRequest)
-	if err != nil {
-		panic(fmt.Errorf("Generic Secret Key error: %+v %s", generateKeyRequest, err))
-	}
-
-	fmt.Println("Generated Generic Secret Key")
-
-	//keys of NIST P-256
-	var publicKeyP256, privateKeyP256 []byte
-	masterSecretKeyP256, masterChainCodeP256 := slip10DeriveKey(
+	// Keys of ED25519
+	var privateKeyEd25519, publicKeyEd25519 []byte
+	masterSecretKeyEd25519, masterChainCodeEd25519 := slip10DeriveKey(
 		cryptoClient,
 		pb.BTCDeriveParm_CkSLIP0010MASTERK,
-		util.OIDNamedCurveP256,
+		util.OIDNamedCurveED25519,
 		0,
 		generateKeyResponse.KeyBytes,
 		nil,
 	)
-	privateKeyP256, _ = slip10DeriveKey(
+	privateKeyEd25519, _ = slip10DeriveKey(
 		cryptoClient,
 		pb.BTCDeriveParm_CkSLIP0010PRV2PRV,
-		util.OIDNamedCurveP256,
+		util.OIDNamedCurveED25519,
 		hardened,
-		masterSecretKeyP256,
-		masterChainCodeP256,
+		masterSecretKeyEd25519,
+		masterChainCodeEd25519,
 	)
-	publicKeyP256, _ = slip10DeriveKey(
+	publicKeyEd25519, _ = slip10DeriveKey(
 		cryptoClient,
 		pb.BTCDeriveParm_CkSLIP0010PRV2PUB,
-		util.OIDNamedCurveP256,
+		util.OIDNamedCurveED25519,
 		hardened,
-		masterSecretKeyP256,
-		masterChainCodeP256,
-	)
-
-	// Keys of Secp256k1
-	var privateKey256k1, publicKey256k1 []byte
-	masterSecretKey256k1, masterChainCode256k1 := slip10DeriveKey(
-		cryptoClient,
-		pb.BTCDeriveParm_CkSLIP0010MASTERK,
-		util.OIDNamedCurveSecp256k1,
-		0,
-		generateKeyResponse.KeyBytes,
-		nil,
-	)
-	privateKey256k1, _ = slip10DeriveKey(
-		cryptoClient,
-		pb.BTCDeriveParm_CkSLIP0010PRV2PRV,
-		util.OIDNamedCurveSecp256k1,
-		hardened,
-		masterSecretKey256k1,
-		masterChainCode256k1,
-	)
-	publicKey256k1, _ = slip10DeriveKey(
-		cryptoClient,
-		pb.BTCDeriveParm_CkSLIP0010PRV2PUB,
-		util.OIDNamedCurveSecp256k1,
-		hardened,
-		masterSecretKey256k1,
-		masterChainCode256k1,
+		masterSecretKeyEd25519,
+		masterChainCodeEd25519,
 	)
 
 	// SignSingle, and VerifyInit/Verify
 	slip10SignSingleAndVerify(cryptoClient, util.OIDNamedCurveP256, privateKeyP256, publicKeyP256)
 	slip10SignSingleAndVerify(cryptoClient, util.OIDNamedCurveSecp256k1, privateKey256k1, publicKey256k1)
+	slip10SignSingleAndVerify(cryptoClient, util.OIDNamedCurveED25519, privateKeyEd25519, publicKeyEd25519)
 	// SignInit/Sign, VerifySingle
-	slip10SignAndVerifyInitAndSingle(cryptoClient, util.OIDNamedCurveP256, privateKeyP256, publicKeyP256)
-	slip10SignAndVerifyInitAndSingle(cryptoClient, util.OIDNamedCurveSecp256k1, privateKey256k1, publicKey256k1)
+	slip10SignAndVerifySingle(cryptoClient, util.OIDNamedCurveP256, privateKeyP256, publicKeyP256)
+	slip10SignAndVerifySingle(cryptoClient, util.OIDNamedCurveSecp256k1, privateKey256k1, publicKey256k1)
+	slip10SignAndVerifySingle(cryptoClient, util.OIDNamedCurveED25519, privateKeyEd25519, publicKeyEd25519)
 
 	// Output:
 	// Generated Generic Secret Key
@@ -629,14 +523,21 @@ func Example_slip10_cross_signAndVerify() {
 	// Derived Key type=CkSLIP0010MASTERK index=0
 	// Derived Key type=CkSLIP0010PRV2PRV index=2147483648
 	// Derived Key type=CkSLIP0010PRV2PUB index=2147483648
+	// Derived Key type=CkSLIP0010MASTERK index=0
+	// Derived Key type=CkSLIP0010PRV2PRV index=2147483648
+	// Derived Key type=CkSLIP0010PRV2PUB index=2147483648
 	// Data signed - 1.2.840.10045.3.1.7
 	// Signature verified - 1.2.840.10045.3.1.7
 	// Data signed - 1.3.132.0.10
 	// Signature verified - 1.3.132.0.10
+	// Data signed - 1.3.101.112
+	// Signature verified - 1.3.101.112
 	// Data signed - 1.2.840.10045.3.1.7
 	// Signature verified - 1.2.840.10045.3.1.7
 	// Data signed - 1.3.132.0.10
 	// Signature verified - 1.3.132.0.10
+	// Data signed - 1.3.101.112
+	// Signature verified - 1.3.101.112
 }
 
 func slip10SignSingleAndVerify(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier, privateKey []byte, publicKey []byte) bool {
@@ -657,9 +558,6 @@ func slip10SignSingleAndVerify(cryptoClient pb.CryptoClient, oid asn1.ObjectIden
 	}
 
 	fmt.Printf("Data signed - %s\n", oid)
-
-	// Modify signature to force returned error code
-	//SignResponse.Signature[0] = 255
 
 	verifyInitRequest := &pb.VerifyInitRequest{
 		Mech:   &pb.Mechanism{Mechanism: mech},
@@ -687,7 +585,7 @@ func slip10SignSingleAndVerify(cryptoClient pb.CryptoClient, oid asn1.ObjectIden
 	return true
 }
 
-func slip10SignAndVerifyInitAndSingle(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier, privateKey []byte, publicKey []byte) bool {
+func slip10SignAndVerifySingle(cryptoClient pb.CryptoClient, oid asn1.ObjectIdentifier, privateKey []byte, publicKey []byte) bool {
 	mech, err := util.GetSignMechanismFromOID(oid)
 	if err != nil {
 		panic(fmt.Errorf("Unexpected OID: %+v", oid))
