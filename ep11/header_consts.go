@@ -6,6 +6,7 @@ Copyright IBM Corp. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
+// Package ep11 contains all of the EP11 constants and translation mappings used by the GREP11 examples
 package ep11
 
 import (

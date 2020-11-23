@@ -8,6 +8,9 @@ The contents of this repository are offered *as-is* and is subject to change at 
 
 For general information about "Enterprise PKCS #11 over gRPC" please see the official [documentation](https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-introduce-cloud-hsm#access-cloud-hsm-pkcs11)
 
+To view the documentation for this examples Go module, type the command `godoc` with the repository's main directory
+and open a browser to `http://localhost:6060/pkg/github.com/IBM-Cloud/hpcs-grep11-go/`.
+
 # Code Examples
 
 Included in this repository are working examples written in Go. The examples show how to use the **IBM Cloud Hyper Protect Services offering** to accomplish the following operations:

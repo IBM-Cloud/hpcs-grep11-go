@@ -4,6 +4,7 @@ Copyright IBM Corp. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
+// Package util provides helper data types and functions for the GREP11 examples
 package util
 
 import (
