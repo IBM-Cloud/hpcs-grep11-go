@@ -5,7 +5,7 @@
 Package examples contains sample code that uses the GREP11 API
 to communicate with an IBM Cloud HPCS instance.
 
-At a high level GREP11 function calls to an HPCS instance consist of the following steps:
+At a high level, a GREP11 function call to an HPCS server instance consists of the following steps:
 
 	1. Connect to the HPCS server instance
 	2. Create a crypto client instance
@@ -13,7 +13,42 @@ At a high level GREP11 function calls to an HPCS instance consist of the followi
 	4. Send the gRPC request message to the HPCS server instance
 	5. Receive the gRPC response from the HPCS server instance and check if an error occured
 
-For more information about the GREP11 API, please visit https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-grep11-api-ref
+GREP11 is derived from Enterprise PKCS #11 (EP11) over gRPC, and since this API is based on the PKCS #11 specification,
+all API input messages (protobuf messages) have a Mechanism field that must be specified.  A mechanism is
+a value that determines what cryptographic operation is to be performed. Some cryptographic operations require
+a mechanism parameter such as an initialization vector for encrypt operations using an AES key. A helper function,
+util.SetMechParm, is provided to reduce the code clutter when setting your mechanism parameter within your
+gRPC input (request) messages.
+
+The GREP11 API is contained within the protobuf source file protos/server.proto and describes the Crypto service,
+its methods, and the input and output (request and response) messages. For more information about the GREP11 API,
+please visit https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-grep11-api-ref
+
+As described in the hpcs-grep11-go README.md file, there are three different types of ciper flows each consisting
+of a set of sub-operations that can be used for most GREP11 operations.
+For example, the Encrypt operation consists of EncryptInit(), Encrypt(),
+EncryptUpdate(), EncryptFinal() and EncryptSingle() sub-operations.
+
+GREP11 sub-operations for Encrypt:
+- EncryptInit() is used to initialize an operation and must be run prior to Encrypt(), EncryptUpdate(), or EncryptFinal() calls
+
+- Encrypt() is used to encrypt data without the need to perform EncryptUpdate() or EncryptFinal() sub-operations
+
+- EncryptUpdate() is used to perform update operations as part of a multi-part operation
+
+- EncryptFinal() is used to perform final operations as part of a multi-part operation
+
+- EncryptSingle() is an IBM EP11 extension to the standard PKCS#11 specification and used to perform a single call
+without the need to use the Init, Update, and Final sub-operations
+
+	Cipher Flow 1:
+	EncryptInit(), Encrypt()
+
+	Ciper Flow 2:
+	EncryptInit(), EncryptUpdate(), EncryptUpdate()..., EncryptFinal()
+
+	Ciper Flow 3:
+	EncryptSingle()
 
 Key Templates
 

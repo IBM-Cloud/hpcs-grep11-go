@@ -268,7 +268,7 @@ func Example_digest() {
 
 	cryptoClient := pb.NewCryptoClient(conn)
 
-	digestData := []byte("This is data that is longer than 64 bytes This is the data that is longer than 64 bytes")
+	digestData := []byte("This is data that is longer than 64 bytes. This is the data that is longer than 64 bytes.")
 	digestInitRequest := &pb.DigestInitRequest{
 		Mech: &pb.Mechanism{Mechanism: ep11.CKM_SHA256},
 	}
@@ -319,8 +319,8 @@ func Example_digest() {
 	}
 
 	// Output:
-	// Digest data using a single digest operation: ad4e0b6e309d192862ec6db692d17072ddd3a98ccd37afe642a04f7ca554c94c
-	// Digest data using multiple operations: ad4e0b6e309d192862ec6db692d17072ddd3a98ccd37afe642a04f7ca554c94c
+	// Digest data using a single digest operation: b036abead70a9739648ab94d556bf120494eab3a470b5ee12be559b9dbc8c408
+	// Digest data using multiple operations: b036abead70a9739648ab94d556bf120494eab3a470b5ee12be559b9dbc8c408
 }
 
 // Example_signAndVerifyUsingRSAKeyPair generates an RSA key pair then signs

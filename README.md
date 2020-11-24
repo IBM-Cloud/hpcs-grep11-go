@@ -6,10 +6,10 @@ This repository contains software used to connect and interact with the **IBM Cl
 
 The contents of this repository are offered *as-is* and is subject to change at anytime.
 
-For general information about "Enterprise PKCS #11 over gRPC" please see the official [documentation](https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-introduce-cloud-hsm#access-cloud-hsm-pkcs11)
+For general information about "Enterprise PKCS #11 over gRPC" (GREP11), please see the official [documentation](https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-introduce-cloud-hsm#access-cloud-hsm-pkcs11)
 
-To view the documentation for this examples Go module, type the command `godoc` with the repository's main directory
-and open a browser to `http://localhost:6060/pkg/github.com/IBM-Cloud/hpcs-grep11-go/`.
+To view the documentation of the hpcs-grep11 Go module contained in this repository, type the command `godoc` (requires the installation of Go) from the cloned repository's main directory
+and open a browser to `http://localhost:6060/pkg/github.com/IBM-Cloud/hpcs-grep11-go/`.  See step 1 in the [section below](#example-setup-and-execution) for instructions on how to install Go.
 
 # Code Examples
 
@@ -25,7 +25,7 @@ Included in this repository are working examples written in Go. The examples sho
   
 ## Example setup and execution
 
-1. [Install Golang](https://golang.org/doc/install).
+1. [Install Go](https://golang.org/doc/install).
 
 2. Clone this repository into a local directory of your choice. Go modules are used for this
    repository, so there is no need to place the cloned repository in your `GOPATH`.
@@ -108,15 +108,15 @@ For example, the *Encrypt* operation consists of *EncryptInit()*, *Encrypt()*, *
 
 #### GREP11 sub-operations for Encrypt:
 
-- *Encrypt***Init()** is used to initialize an operation
+- *Encrypt***Init()** is used to initialize an operation and must be run prior to *Encrypt()*, *EncryptUpdate()*, or *EncryptFinal()* calls
 
-- *Encrypt()* is used to encrypt data without the need to perform *EncryptUpdate()* or *EncryptFinal()* sub-operations. *EncryptInit()* must be run prior to the *Encrypt()* call
+- *Encrypt()* is used to encrypt data without the need to perform *EncryptUpdate()* or *EncryptFinal()* sub-operations.
 
 - *Encrypt***Update()** is used to perform update operations as part of a multi-part operation
 
 - *Encrypt***Final()** is used to perform final operations as part of a multi-part operation
 
-- *Encrypt***Single()** is an IBM EP11 extension to the standard PKCS#11 specification and used to perform a single call without the need to use the **Init**, **Update**, and **Final** sub-operations
+- *Encrypt***Single()** is an IBM EP11 extension to the standard PKCS #11 specification and used to perform a single call without the need to use the **Init**, **Update**, and **Final** sub-operations
 
 The following diagram shows the three calling sequence flows that can be used for *Encrypt*, *Decrypt*, *Digest*, *Sign* and *Verify* operations:
 
