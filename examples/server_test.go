@@ -38,7 +38,7 @@ var callOpts = []grpc.DialOption{
 	grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
 	grpc.WithPerRPCCredentials(&util.IAMPerRPCCredentials{
 		APIKey:   "<ibm_cloud_apikey>",
-		Endpoint: "<https://<iam_ibm_cloud_endpoint>",
+		Endpoint: "https://iam.cloud.ibm.com",
 		Instance: "<hpcs_instance_id>",
 	}),
 }

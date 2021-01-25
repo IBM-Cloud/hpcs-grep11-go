@@ -545,7 +545,6 @@ message VerifySingleResponse {
 
 message GenerateKeyRequest {
 	Mechanism Mech = 1;
-	map<uint64,bytes> TemplateBytes = 2 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 	map<uint64,AttributeValue> Template = 6 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 }
 
@@ -557,8 +556,6 @@ message GenerateKeyResponse {
 
 message GenerateKeyPairRequest {
 	Mechanism Mech = 1;
-	map<uint64,bytes> PubKeyTemplateBytes = 2 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
-	map<uint64,bytes> PrivKeyTemplateBytes = 3 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 	map<uint64,AttributeValue> PrivKeyTemplate = 7 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 	map<uint64,AttributeValue> PubKeyTemplate = 8 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 }
@@ -586,7 +583,6 @@ message UnwrapKeyRequest {
 	bytes KeK = 2;
 	bytes MacKey = 3;
 	Mechanism Mech = 5;
-	map<uint64,bytes> TemplateBytes = 6 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 	map<uint64,AttributeValue> Template = 9 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 }
 
@@ -598,7 +594,6 @@ message UnwrapKeyResponse {
 
 message DeriveKeyRequest {
 	Mechanism Mech = 1;
-	map<uint64,bytes> TemplateBytes = 2 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 	bytes BaseKey = 3;
 	bytes Data = 4;
 	map<uint64,AttributeValue> Template = 8 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];

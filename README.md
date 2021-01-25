@@ -42,7 +42,6 @@ Included in this repository are working examples written in Go. The examples sho
 		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
 		grpc.WithPerRPCCredentials(&util.IAMPerRPCCredentials{
 			APIKey:   "<ibm_cloud_apikey>",
-			Endpoint: "<https://<iam_ibm_cloud_endpoint>",
 			Instance: "<hpcs_instance_id>",
 		}),
 	}

@@ -117,12 +117,12 @@ The following code snippet shows how to setup IBM Cloud HPCS credentials:
 		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
 		grpc.WithPerRPCCredentials(&util.IAMPerRPCCredentials{
 			APIKey:   "<ibm_cloud_apikey>",
-			Endpoint: "<https://<iam_ibm_cloud_endpoint>",
+			Endpoint: "https://iam.cloud.ibm.com",
 			Instance: "<hpcs_instance_id>",
 		}),
 	}
 
-The instance address and port, APIKey, IAM endpoint, and the HPCS instance ID need to be specified. Update
+The instance address and port, APIKey, and the HPCS instance ID need to be specified. Update
 the server_test.go file with the connection information prior to running the examples.
 
 
