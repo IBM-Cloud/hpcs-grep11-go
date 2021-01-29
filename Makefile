@@ -10,7 +10,6 @@ build-protos:
 	protoc  protos/*.proto \
 	        -Iprotos \
 	        -Ivendor/github.com/gogo/protobuf/gogoproto \
-	        --gogofast_out=plugins=grpc,\
-Mgoogle/protobuf/descriptor.proto=github.com/gogo/protobuf/protoc-gen-gogo/descriptor:./grpc
+	        --gogofast_out=plugins=grpc,Mgoogle/protobuf/descriptor.proto=github.com/gogo/protobuf/protoc-gen-gogo/descriptor:./grpc
 	gofmt -w -s ep11
 	rm -rf vendor

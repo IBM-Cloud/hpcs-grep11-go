@@ -58,7 +58,7 @@ Helper functions and a helper type have been provided to configure and properly 
 
 The following code snippet shows how to use the helper functions and helper type for generating an RSA key pair.
 
-	publicExponent := []byte{0x11}
+	publicExponent := 17
 	publicKeyTemplate := ep11.EP11Attributes{
 		ep11.CKA_ENCRYPT:         true,
 		ep11.CKA_VERIFY:          true,
@@ -100,6 +100,7 @@ The following code snippet shows how the util.Convert() function is used to chec
 		} else {
 			panic(fmt.Errorf("Verify error: [%d]: %s", ep11Status.Code, ep11Status.Detail))
 		}
+	}
 
 
 
@@ -111,14 +112,18 @@ use of the GetRequestMetadata and getToken helper functions contained in util/ut
 
 The following code snippet shows how to setup IBM Cloud HPCS credentials:
 
-	const address = "<grep11_server_address>:<port>"
+	var (
+		address        = "<grep11_server_address>:<port>"
+		apiKey         = "<ibm_cloud_apikey>"
+		hpcsInstanceID = "<hpcs_instance_id>"
+	)
 
 	var callOpts = []grpc.DialOption{
 		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
 		grpc.WithPerRPCCredentials(&util.IAMPerRPCCredentials{
-			APIKey:   "<ibm_cloud_apikey>",
+			APIKey:   apiKey,
+			Instance: hpcsInstanceID,
 			Endpoint: "https://iam.cloud.ibm.com",
-			Instance: "<hpcs_instance_id>",
 		}),
 	}
 

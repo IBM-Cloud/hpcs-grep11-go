@@ -32,14 +32,18 @@ import (
 // See the cipher flow diagram contained in the README.md file of this repository for additional information
 
 // The following IBM Cloud HPCS service items need to be changed prior to running the sample program
-const address = "<grep11_server_address>:<port>"
+var (
+	address        = "<grep11_server_address>:<port>"
+	apiKey         = "<ibm_cloud_apikey>"
+	hpcsInstanceID = "<hpcs_instance_id>"
+)
 
 var callOpts = []grpc.DialOption{
 	grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
 	grpc.WithPerRPCCredentials(&util.IAMPerRPCCredentials{
-		APIKey:   "<ibm_cloud_apikey>",
+		APIKey:   apiKey,
+		Instance: hpcsInstanceID,
 		Endpoint: "https://iam.cloud.ibm.com",
-		Instance: "<hpcs_instance_id>",
 	}),
 }
 
@@ -336,7 +340,7 @@ func Example_signAndVerifyUsingRSAKeyPair() {
 	cryptoClient := pb.NewCryptoClient(conn)
 
 	// Generate RSA key pair
-	publicExponent := []byte{0x11}
+	publicExponent := 17
 	publicKeyTemplate := ep11.EP11Attributes{
 		ep11.CKA_ENCRYPT:         true,
 		ep11.CKA_VERIFY:          true, // to verify a signature
@@ -903,7 +907,7 @@ func Example_wrapAndUnwrapKey() {
 	}
 
 	// Generate RSA key pairs
-	publicExponent := []byte{0x11}
+	publicExponent := 17
 	publicKeyTemplate := ep11.EP11Attributes{
 		ep11.CKA_ENCRYPT:         true,
 		ep11.CKA_WRAP:            true, // to wrap a key

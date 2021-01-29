@@ -4,12 +4,12 @@ This repository contains software used to connect and interact with the **IBM Cl
 
 # Contents
 
-The contents of this repository are offered *as-is* and is subject to change at anytime.
+The contents of this repository are offered *as-is* and are subject to change at anytime.
 
 For general information about "Enterprise PKCS #11 over gRPC" (GREP11), please see the official [documentation](https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-introduce-cloud-hsm#access-cloud-hsm-pkcs11)
 
 To view the documentation of the hpcs-grep11 Go module contained in this repository, type the command `godoc` (requires the installation of Go) from the cloned repository's main directory
-and open a browser to `http://localhost:6060/pkg/github.com/IBM-Cloud/hpcs-grep11-go/`.  See step 1 in the [section below](#example-setup-and-execution) for instructions on how to install Go.
+and open a browser to [http://localhost:6060/pkg/github.com/IBM-Cloud/hpcs-grep11-go/](http://localhost:6060/pkg/github.com/IBM-Cloud/hpcs-grep11-go/).  See step 1 in the [section below](#example-setup-and-execution) for instructions on how to install Go.
 
 # Code Examples
 
@@ -30,21 +30,18 @@ Included in this repository are working examples written in Go. The examples sho
 2. Clone this repository into a local directory of your choice. Go modules are used for this
    repository, so there is no need to place the cloned repository in your `GOPATH`.
 
-3. Update the following information in the [examples/server_test.go](examples/server_test.go#L35-L44) file.  
+3. Update the following information in the [examples/server_test.go](examples/server_test.go#L35-L39) file.  
 
 	*NOTE: This information can obtained by logging in to your IBM Cloud account and viewing your Hyper Protect Crypto Serverices instance and IAM information. See the [GREP11 API documentation](https://cloud.ibm.com/docs/services/hs-crypto?topic=hs-crypto-grep11-api-ref) for more information about GREP11*.
 
 	```Golang
-	// The following IBM Cloud HPCS service items need to be changed prior to running the sample program
-	const address = "<grep11_server_address>:<port>"
+    // The following IBM Cloud HPCS service items need to be changed prior to running the sample program:
 
-	var callOpts = []grpc.DialOption{
-		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
-		grpc.WithPerRPCCredentials(&util.IAMPerRPCCredentials{
-			APIKey:   "<ibm_cloud_apikey>",
-			Instance: "<hpcs_instance_id>",
-		}),
-	}
+    var (
+        address        = "<grep11_server_address>:<port>"
+        apiKey         = "<ibm_cloud_apikey>"
+        hpcsInstanceID = "<hpcs_instance_id>"
+    )
 	```
 		
 
