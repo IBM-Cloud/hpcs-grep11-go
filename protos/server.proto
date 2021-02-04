@@ -132,16 +132,6 @@ service Crypto {
 	//     target_t target) ;
 	rpc DecryptSingle(DecryptSingleRequest) returns (DecryptSingleResponse) {}
 
-	// CK_RV m_ReencryptSingle (
-	//     const unsigned char *decKey, size_t decKeylen,
-	//     const unsigned char *encKey, size_t encKeylen,
-	//     CK_MECHANISM_PTR decMech,
-	//     CK_MECHANISM_PTR encMech,
-	//     CK_BYTE_PTR ciphered, CK_ULONG cipheredlen,
-	//     CK_BYTE_PTR reciphered, CK_ULONG_PTR recipheredlen,
-	//     target_t target) ;
-	rpc ReencryptSingle(ReencryptSingleRequest) returns (ReencryptSingleResponse) {}
-
 	// CK_RV m_SignInit (
 	//     unsigned char *state, size_t *statelen,
 	//     CK_MECHANISM_PTR mech,
@@ -441,18 +431,6 @@ message DecryptSingleResponse {
 	bytes Plain = 4;
 }
 
-message ReencryptSingleRequest {
-	bytes DecKey = 1;
-	bytes EncKey = 2;
-	Mechanism DecMech = 3;
-	Mechanism EncMech = 4;
-	bytes Ciphered = 5;
-}
-
-message ReencryptSingleResponse {
-	bytes Reciphered = 6;
-}
-
 message SignInitRequest {
 	Mechanism Mech = 2;
 	bytes PrivKey = 3;
@@ -648,7 +626,6 @@ message Mechanism {
 		RSAOAEPParm RSAOAEPParameter = 3;
 		RSAPSSParm RSAPSSParameter = 4;
 		ECDH1DeriveParm ECDH1DeriveParameter = 5;
-		BTCDeriveParm BTCDeriveParameter = 6;
 	}
 }
 
@@ -712,24 +689,6 @@ message ECDH1DeriveParm {
 	KeyDerivationFunction Kdf = 1;
 	bytes SharedData = 2;
 	bytes PublicData = 3;
-}
-
-message BTCDeriveParm {
-        enum BTCDeriveType {
-               CkBIP0032NotUsed = 0;
-               CkBIP0032PRV2PRV = 1;
-               CkBIP0032PRV2PUB = 2;
-               CkBIP0032PUB2PUB = 3;
-               CkBIP0032MASTERK = 4;
-               CkSLIP0010PRV2PRV = 5;
-               CkSLIP0010PRV2PUB = 6;
-               CkSLIP0010PUB2PUB = 7;
-               CkSLIP0010MASTERK = 8;
-        }
-        BTCDeriveType Type = 1;
-        uint64 ChildKeyIndex = 2;                                                
-        bytes ChainCode = 3;                                                     
-        uint64 Version = 4;                                                      
 }
 
 message HMACGeneralParm {

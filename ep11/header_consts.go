@@ -6,7 +6,6 @@ Copyright IBM Corp. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-// Package ep11 contains all of the EP11 constants and translation mappings used by the GREP11 examples
 package ep11
 
 import (
@@ -770,7 +769,6 @@ const (
 	CKM_IBM_WIRETEST                   Mechanism = CKM_VENDOR_DEFINED + 0x30004
 	CKM_IBM_RETAINKEY                  Mechanism = CKM_VENDOR_DEFINED + 0x40001
 	CKM_IBM_CPACF_WRAP                 Mechanism = CKM_VENDOR_DEFINED + 0x60001
-	CKM_IBM_BTC_DERIVE                 Mechanism = CKM_VENDOR_DEFINED + 0x70001
 
 	CKF_DONT_BLOCK                     MechanismInfoFlag = 0x00000001
 	CKF_HW                             MechanismInfoFlag = 0x00000001
@@ -2085,7 +2083,6 @@ var (
 		"CKM_IBM_WIRETEST":                   CKM_IBM_WIRETEST,
 		"CKM_IBM_RETAINKEY":                  CKM_IBM_RETAINKEY,
 		"CKM_IBM_CPACF_WRAP":                 CKM_IBM_CPACF_WRAP,
-		"CKM_IBM_BTC_DERIVE":                 CKM_IBM_BTC_DERIVE,
 	}
 	MechanismValueToName = map[Mechanism]string{
 		CKM_RSA_PKCS_KEY_PAIR_GEN:          "CKM_RSA_PKCS_KEY_PAIR_GEN",
@@ -2448,7 +2445,6 @@ var (
 		CKM_IBM_WIRETEST:                   "CKM_IBM_WIRETEST",
 		CKM_IBM_RETAINKEY:                  "CKM_IBM_RETAINKEY",
 		CKM_IBM_CPACF_WRAP:                 "CKM_IBM_CPACF_WRAP",
-		CKM_IBM_BTC_DERIVE:                 "CKM_IBM_BTC_DERIVE",
 	}
 	MechanismInfoFlagNameToValue = map[string]MechanismInfoFlag{
 		"CKF_DONT_BLOCK":                     CKF_DONT_BLOCK,

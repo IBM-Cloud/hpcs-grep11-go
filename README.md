@@ -50,48 +50,32 @@ Included in this repository are working examples written in Go. The examples sho
 5. The sample program produces output similar to the following:
 
     ```
-    === RUN   Example_bip32_Base
-    --- PASS: Example_bip32_Base (4.12s)
-    === RUN   Example_bip32_KeyDerivation
-    --- PASS: Example_bip32_KeyDerivation (0.19s)
-    === RUN   Example_bip32_Cross_SignVerify
-    --- PASS: Example_bip32_Cross_SignVerify (0.65s)
-    === RUN   Example_signAndVerifyUsingECKeyPairWithEdwardsCurve
-    --- PASS: Example_signAndVerifyUsingECKeyPairWithEdwardsCurve (0.20s)
-    === RUN   Example_signAndVerifyEP11SingleUsingECKeyPairWithEdwardsCurve
-    --- PASS: Example_signAndVerifyEP11SingleUsingECKeyPairWithEdwardsCurve (0.15s)
     === RUN   Example_getMechanismInfo
-    --- PASS: Example_getMechanismInfo (0.11s)
+    --- PASS: Example_getMechanismInfo (1.87s)
     === RUN   Example_generateGenericKey
-    --- PASS: Example_generateGenericKey (0.09s)
+    --- PASS: Example_generateGenericKey (0.29s)
     === RUN   Example_encryptAndDecryptUsingAES
-    --- PASS: Example_encryptAndDecryptUsingAES (0.28s)
+    --- PASS: Example_encryptAndDecryptUsingAES (0.80s)
     === RUN   Example_digest
-    --- PASS: Example_digest (0.18s)
+    --- PASS: Example_digest (0.58s)
     === RUN   Example_signAndVerifyUsingRSAKeyPair
-    --- PASS: Example_signAndVerifyUsingRSAKeyPair (0.21s)
+    --- PASS: Example_signAndVerifyUsingRSAKeyPair (0.54s)
     === RUN   Example_signAndVerifyUsingDSAKeyPair
-    --- PASS: Example_signAndVerifyUsingDSAKeyPair (0.99s)
+    --- PASS: Example_signAndVerifyUsingDSAKeyPair (5.28s)
     === RUN   Example_deriveKeyUsingDHKeyPair
-    --- PASS: Example_deriveKeyUsingDHKeyPair (0.64s)
+    --- PASS: Example_deriveKeyUsingDHKeyPair (3.42s)
     === RUN   Example_signAndVerifyUsingECDSAKeyPair
-    --- PASS: Example_signAndVerifyUsingECDSAKeyPair (0.16s)
+    --- PASS: Example_signAndVerifyUsingECDSAKeyPair (0.55s)
     === RUN   Example_signAndVerifyToTestErrorHandling
-    --- PASS: Example_signAndVerifyToTestErrorHandling (0.16s)
+    --- PASS: Example_signAndVerifyToTestErrorHandling (1.89s)
     === RUN   Example_wrapAndUnwrapKey
-    --- PASS: Example_wrapAndUnwrapKey (0.20s)
+    --- PASS: Example_wrapAndUnwrapKey (0.50s)
     === RUN   Example_deriveKey
-    --- PASS: Example_deriveKey (0.22s)
-    === RUN   Example_reencryptSingle
-    --- PASS: Example_reencryptSingle (0.19s)
-    === RUN   Example_slip10DeriveKey
-    --- PASS: Example_slip10DeriveKey (2.98s)
-    === RUN   Example_slip10CrossSignAndVerify
-    --- PASS: Example_slip10CrossSignAndVerify (0.74s)
+    --- PASS: Example_deriveKey (0.65s)
     === RUN   Example_tls
-    --- PASS: Example_tls (0.14s)
+    --- PASS: Example_tls (0.39s)
     PASS
-    ok      github.com/IBM-Cloud/hpcs-grep11-go/examples    13.106s
+    ok      github.com/IBM-Cloud/hpcs-grep11-go/examples    17.450s
     ```
 
 **NOTE:** By default the rewrapKeyBlob test is skipped.  This test acts as sample code that can be used to reencrypt your existing keys with a new HSM wrapping key.  See figure 8 on page 27 and page 37 in https://www.ibm.com/downloads/cas/WXRDPRAN for additional information on how existing keys can be reencrypted.  This operation requires coordination between the end-user and the **IBM Cloud Hyper Protect Crypto Services** instance's administrator(s).
