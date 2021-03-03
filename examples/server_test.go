@@ -33,24 +33,25 @@ import (
 
 // The following IBM Cloud HPCS service items need to be changed prior to running the sample program
 var (
-	address        = "<grep11_server_address>:<port>"
-	apiKey         = "<ibm_cloud_apikey>"
-	hpcsInstanceID = "<hpcs_instance_id>"
+	Address        = "<grep11_server_address>:<port>"
+	APIKey         = "<ibm_cloud_apikey>"
+	HPCSInstanceID = "<hpcs_instance_id>"
+	IAMEndpoint    = "https://iam.cloud.ibm.com"
 )
 
 var callOpts = []grpc.DialOption{
 	grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
 	grpc.WithPerRPCCredentials(&util.IAMPerRPCCredentials{
-		APIKey:   apiKey,
-		Instance: hpcsInstanceID,
-		Endpoint: "https://iam.cloud.ibm.com",
+		APIKey:   APIKey,
+		Instance: HPCSInstanceID,
+		Endpoint: IAMEndpoint,
 	}),
 }
 
 // Example_getMechanismInfo retrieves a mechanism list and retrieves detailed information for the CKM_RSA_PKCS mechanism
 // Flow: connect, get mechanism list, get mechanism info
 func Example_getMechanismInfo() {
-	conn, err := grpc.Dial(address, callOpts...)
+	conn, err := grpc.Dial(Address, callOpts...)
 	if err != nil {
 		panic(fmt.Errorf("Could not connect to server: %s", err))
 	}
@@ -88,7 +89,7 @@ func Example_getMechanismInfo() {
 // Generic keys can be used to derive new keys
 // Flow: connect, generate generic key
 func Example_generateGenericKey() {
-	conn, err := grpc.Dial(address, callOpts...)
+	conn, err := grpc.Dial(Address, callOpts...)
 	if err != nil {
 		panic(fmt.Errorf("Could not connect to server: %s", err))
 	}
@@ -124,7 +125,7 @@ func Example_generateGenericKey() {
 // Example_encryptAndDecryptUsingAES generates an AES key then encrypts and decrypts plain text using the generated AES key
 // Flow: connect, generate AES key, generate IV, encrypt PKCS #11 multi-part data, decrypt PKCS #11 multi-part data
 func Example_encryptAndDecryptUsingAES() {
-	conn, err := grpc.Dial(address, callOpts...)
+	conn, err := grpc.Dial(Address, callOpts...)
 	if err != nil {
 		panic(fmt.Errorf("Could not connect to server: %s", err))
 	}
@@ -264,7 +265,7 @@ func Example_encryptAndDecryptUsingAES() {
 // Example_digest calculates the digest of some plain text
 // Flow: connect, digest PKCS #11 single-part data, digest PKCS #11 multi-part data
 func Example_digest() {
-	conn, err := grpc.Dial(address, callOpts...)
+	conn, err := grpc.Dial(Address, callOpts...)
 	if err != nil {
 		panic(fmt.Errorf("Could not connect to server: %s", err))
 	}
@@ -331,7 +332,7 @@ func Example_digest() {
 // a sample message and verifies the signed message using the RSA key pair
 // Flow: connect, generate RSA key pair, sign PKCS #11 single-part data, PKCS #11 verify single-part data
 func Example_signAndVerifyUsingRSAKeyPair() {
-	conn, err := grpc.Dial(address, callOpts...)
+	conn, err := grpc.Dial(Address, callOpts...)
 	if err != nil {
 		panic(fmt.Errorf("Could not connect to server: %v", err))
 	}
@@ -422,7 +423,7 @@ func Example_signAndVerifyUsingRSAKeyPair() {
 // the sample message and verifies the signed message using the DSA key pair
 // Flow: connect, generate DSA key pair, sign PKCS #11 single-part data, PKCS #11 verify single-part data
 func Example_signAndVerifyUsingDSAKeyPair() {
-	conn, err := grpc.Dial(address, callOpts...)
+	conn, err := grpc.Dial(Address, callOpts...)
 	if err != nil {
 		panic(fmt.Errorf("Could not connect to server: %v", err))
 	}
@@ -528,7 +529,7 @@ func Example_signAndVerifyUsingDSAKeyPair() {
 // Example_deriveKeyUsingDHKeyPair derives keys and shares encrypted message between two users
 // Flow: connect, generate Diffie-Hellman key pairs, derive keys from Diffie-Hellman key pairs, share encypted message
 func Example_deriveKeyUsingDHKeyPair() {
-	conn, err := grpc.Dial(address, callOpts...)
+	conn, err := grpc.Dial(Address, callOpts...)
 	if err != nil {
 		panic(fmt.Errorf("Could not connect to server: %v", err))
 	}
@@ -696,7 +697,7 @@ func Example_deriveKeyUsingDHKeyPair() {
 // then uses the key pair to sign and verify a sample message
 // Flow: connect, generate ECDSA key pair, sign PKCS #11 single-part data, verify PKCS #11 single-part data
 func Example_signAndVerifyUsingECDSAKeyPair() {
-	conn, err := grpc.Dial(address, callOpts...)
+	conn, err := grpc.Dial(Address, callOpts...)
 	if err != nil {
 		panic(fmt.Errorf("Could not connect to server: %s", err))
 	}
@@ -787,7 +788,7 @@ func Example_signAndVerifyUsingECDSAKeyPair() {
 // Flow: connect, generate ECDSA key pair, sign PKCS #11 single-part data, modify signature to force verify error,
 //                verify PKCS #11 single-part data, ensure proper error is returned
 func Example_signAndVerifyToTestErrorHandling() {
-	conn, err := grpc.Dial(address, callOpts...)
+	conn, err := grpc.Dial(Address, callOpts...)
 	if err != nil {
 		panic(fmt.Errorf("Could not connect to server: %s", err))
 	}
@@ -880,7 +881,7 @@ func Example_signAndVerifyToTestErrorHandling() {
 // Example_wrapAndUnWrapKey wraps an AES key with a RSA public key and then unwraps it with the RSA private key
 // Flow: connect, generate AES key, generate RSA key pair, wrap/unwrap AES key with RSA key pair
 func Example_wrapAndUnwrapKey() {
-	conn, err := grpc.Dial(address, callOpts...)
+	conn, err := grpc.Dial(Address, callOpts...)
 	if err != nil {
 		panic(fmt.Errorf("Could not connect to server: %s", err))
 	}
@@ -984,7 +985,7 @@ func Example_wrapAndUnwrapKey() {
 // Flow: connect, generate key pairs for Alice and Bob, derive AES key for Bob, derive AES key for Alice,
 //       encrypt with Alice's AES key and decrypt with Bob's AES key
 func Example_deriveKey() {
-	conn, err := grpc.Dial(address, callOpts...)
+	conn, err := grpc.Dial(Address, callOpts...)
 	if err != nil {
 		panic(fmt.Errorf("Could not connect to server: %s", err))
 	}
@@ -1139,7 +1140,7 @@ NOTE: This test contains two pauses that require the user to type CTRL-c after e
 `
 	t.Skipf(message)
 
-	conn, err := grpc.Dial(address, callOpts...)
+	conn, err := grpc.Dial(Address, callOpts...)
 	if err != nil {
 		t.Fatalf("Could not connect to server: %s", err)
 	}

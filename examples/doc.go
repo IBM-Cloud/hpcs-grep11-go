@@ -113,17 +113,18 @@ use of the GetRequestMetadata and getToken helper functions contained in util/ut
 The following code snippet shows how to setup IBM Cloud HPCS credentials:
 
 	var (
-		address        = "<grep11_server_address>:<port>"
-		apiKey         = "<ibm_cloud_apikey>"
-		hpcsInstanceID = "<hpcs_instance_id>"
+		Address        = "<grep11_server_address>:<port>"
+		APIKey         = "<ibm_cloud_apikey>"
+		HPCSInstanceID = "<hpcs_instance_id>"
+		IAMEndpoint    = "https://iam.cloud.ibm.com"
 	)
 
 	var callOpts = []grpc.DialOption{
 		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
 		grpc.WithPerRPCCredentials(&util.IAMPerRPCCredentials{
-			APIKey:   apiKey,
-			Instance: hpcsInstanceID,
-			Endpoint: "https://iam.cloud.ibm.com",
+			APIKey:   APIKey,
+			Instance: HPCSInstanceID,
+			Endpoint: IAMEndpoint,
 		}),
 	}
 
