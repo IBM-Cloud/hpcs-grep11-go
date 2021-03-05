@@ -132,7 +132,7 @@ func ping(client *http.Client, serverAddr string) (string, error) {
 
 // Example_tls tests TLS communication between a client and server using a certificate and private key that are dynamically generated
 func Example_tls() {
-	conn, err := grpc.Dial(address, callOpts...)
+	conn, err := grpc.Dial(Address, callOpts...)
 	if err != nil {
 		fmt.Printf("Could not connect to server: %s", err)
 		return
