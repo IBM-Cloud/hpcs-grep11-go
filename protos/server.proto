@@ -14,6 +14,7 @@ package grep11;
 import "gogo.proto";
 
 option java_multiple_files = true;
+option java_outer_classname = "CryptoProto";
 option java_package = "com.ibm.crypto.grep11.grpc";
 
 service Crypto {
@@ -23,99 +24,99 @@ service Crypto {
 	//     CK_BYTE_PTR rnd, CK_ULONG rndlen,
 	//     target_t target) ;
 	rpc GenerateRandom(GenerateRandomRequest) returns (GenerateRandomResponse) {}
-
+	
 	// CK_RV m_DigestInit (
 	//     unsigned char *state, size_t *statelen,
 	//     const CK_MECHANISM_PTR mech,
 	//     target_t target) ;
 	rpc DigestInit(DigestInitRequest) returns (DigestInitResponse) {}
-
+	
 	// CK_RV m_Digest (
 	//     const unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR data, CK_ULONG datalen,
 	//     CK_BYTE_PTR digest, CK_ULONG_PTR digestlen,
 	//     target_t target) ;
 	rpc Digest(DigestRequest) returns (DigestResponse) {}
-
+	
 	// CK_RV m_DigestUpdate (
 	//     unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR data, CK_ULONG datalen,
 	//     target_t target) ;
 	rpc DigestUpdate(DigestUpdateRequest) returns (DigestUpdateResponse) {}
-
+	
 	// CK_RV m_DigestKey (
 	//     unsigned char *state, size_t statelen,
 	//     const unsigned char *key, size_t keylen,
 	//     target_t target) ;
 	rpc DigestKey(DigestKeyRequest) returns (DigestKeyResponse) {}
-
+	
 	// CK_RV m_DigestFinal (
 	//     const unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR digest, CK_ULONG_PTR digestlen,
 	//     target_t target) ;
 	rpc DigestFinal(DigestFinalRequest) returns (DigestFinalResponse) {}
-
+	
 	// CK_RV m_DigestSingle (
 	//     CK_MECHANISM_PTR mech,
 	//     CK_BYTE_PTR data, CK_ULONG datalen,
 	//     CK_BYTE_PTR digest, CK_ULONG_PTR digestlen,
 	//     target_t target) ;
 	rpc DigestSingle(DigestSingleRequest) returns (DigestSingleResponse) {}
-
+	
 	// CK_RV m_EncryptInit (
 	//     unsigned char *state, size_t *statelen,
 	//     CK_MECHANISM_PTR mech,
 	//     const unsigned char *key, size_t keylen,
 	//     target_t target) ;
 	rpc EncryptInit(EncryptInitRequest) returns (EncryptInitResponse) {}
-
+	
 	// CK_RV m_DecryptInit (
 	//     unsigned char *state, size_t *statelen,
 	//     CK_MECHANISM_PTR mech,
 	//     const unsigned char *key, size_t keylen,
 	//     target_t target) ;
 	rpc DecryptInit(DecryptInitRequest) returns (DecryptInitResponse) {}
-
+	
 	// CK_RV m_EncryptUpdate (
 	//     unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR plain, CK_ULONG plainlen,
 	//     CK_BYTE_PTR ciphered, CK_ULONG_PTR cipheredlen,
 	//     target_t target) ;
 	rpc EncryptUpdate(EncryptUpdateRequest) returns (EncryptUpdateResponse) {}
-
+	
 	// CK_RV m_DecryptUpdate (
 	//     unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR ciphered, CK_ULONG cipheredlen,
 	//     CK_BYTE_PTR plain, CK_ULONG_PTR plainlen,
 	//     target_t target) ;
 	rpc DecryptUpdate(DecryptUpdateRequest) returns (DecryptUpdateResponse) {}
-
+	
 	// CK_RV m_Encrypt (
 	//     const unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR plain, CK_ULONG plainlen,
 	//     CK_BYTE_PTR ciphered, CK_ULONG_PTR cipheredlen,
 	//     target_t target) ;
 	rpc Encrypt(EncryptRequest) returns (EncryptResponse) {}
-
+	
 	// CK_RV m_Decrypt (
 	//     const unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR ciphered, CK_ULONG cipheredlen,
 	//     CK_BYTE_PTR plain, CK_ULONG_PTR plainlen,
 	//     target_t target) ;
 	rpc Decrypt(DecryptRequest) returns (DecryptResponse) {}
-
+	
 	// CK_RV m_EncryptFinal (
 	//     const unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR ciphered, CK_ULONG_PTR cipheredlen,
 	//     target_t target) ;
 	rpc EncryptFinal(EncryptFinalRequest) returns (EncryptFinalResponse) {}
-
+	
 	// CK_RV m_DecryptFinal (
 	//     const unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR plain, CK_ULONG_PTR plainlen,
 	//     target_t target) ;
 	rpc DecryptFinal(DecryptFinalRequest) returns (DecryptFinalResponse) {}
-
+	
 	// CK_RV m_EncryptSingle (
 	//     const unsigned char *key, size_t keylen,
 	//     CK_MECHANISM_PTR mech,
@@ -123,7 +124,7 @@ service Crypto {
 	//     CK_BYTE_PTR ciphered, CK_ULONG_PTR cipheredlen,
 	//     target_t target) ;
 	rpc EncryptSingle(EncryptSingleRequest) returns (EncryptSingleResponse) {}
-
+	
 	// CK_RV m_DecryptSingle (
 	//     const unsigned char *key, size_t keylen,
 	//     CK_MECHANISM_PTR mech,
@@ -131,59 +132,59 @@ service Crypto {
 	//     CK_BYTE_PTR plain, CK_ULONG_PTR plainlen,
 	//     target_t target) ;
 	rpc DecryptSingle(DecryptSingleRequest) returns (DecryptSingleResponse) {}
-
+	
 	// CK_RV m_SignInit (
 	//     unsigned char *state, size_t *statelen,
 	//     CK_MECHANISM_PTR mech,
 	//     const unsigned char *privKey, size_t privKeylen,
 	//     target_t target) ;
 	rpc SignInit(SignInitRequest) returns (SignInitResponse) {}
-
+	
 	// CK_RV m_VerifyInit (
 	//     unsigned char *state, size_t *statelen,
 	//     CK_MECHANISM_PTR mech,
 	//     const unsigned char *pubKey, size_t pubKeylen,
 	//     target_t target) ;
 	rpc VerifyInit(VerifyInitRequest) returns (VerifyInitResponse) {}
-
+	
 	// CK_RV m_SignUpdate (
 	//     unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR data, CK_ULONG datalen,
 	//     target_t target) ;
 	rpc SignUpdate(SignUpdateRequest) returns (SignUpdateResponse) {}
-
+	
 	// CK_RV m_VerifyUpdate (
 	//     unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR data, CK_ULONG datalen,
 	//     target_t target) ;
 	rpc VerifyUpdate(VerifyUpdateRequest) returns (VerifyUpdateResponse) {}
-
+	
 	// CK_RV m_SignFinal (
 	//     const unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR signature, CK_ULONG_PTR signaturelen,
 	//     target_t target) ;
 	rpc SignFinal(SignFinalRequest) returns (SignFinalResponse) {}
-
+	
 	// CK_RV m_VerifyFinal (
 	//     const unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR signature, CK_ULONG signaturelen,
 	//     target_t target) ;
 	rpc VerifyFinal(VerifyFinalRequest) returns (VerifyFinalResponse) {}
-
+	
 	// CK_RV m_Sign (
 	//     const unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR data, CK_ULONG datalen,
 	//     CK_BYTE_PTR signature, CK_ULONG_PTR signaturelen,
 	//     target_t target) ;
 	rpc Sign(SignRequest) returns (SignResponse) {}
-
+	
 	// CK_RV m_Verify (
 	//     const unsigned char *state, size_t statelen,
 	//     CK_BYTE_PTR data, CK_ULONG datalen,
 	//     CK_BYTE_PTR signature, CK_ULONG signaturelen,
 	//     target_t target) ;
 	rpc Verify(VerifyRequest) returns (VerifyResponse) {}
-
+	
 	// CK_RV m_SignSingle (
 	//     const unsigned char *privKey, size_t privKeylen,
 	//     CK_MECHANISM_PTR mech,
@@ -191,7 +192,7 @@ service Crypto {
 	//     CK_BYTE_PTR signature, CK_ULONG_PTR signaturelen,
 	//     target_t target) ;
 	rpc SignSingle(SignSingleRequest) returns (SignSingleResponse) {}
-
+	
 	// CK_RV m_VerifySingle (
 	//     const unsigned char *pubKey, size_t pubKeylen,
 	//     CK_MECHANISM_PTR mech,
@@ -199,7 +200,7 @@ service Crypto {
 	//     CK_BYTE_PTR signature, CK_ULONG signaturelen,
 	//     target_t target) ;
 	rpc VerifySingle(VerifySingleRequest) returns (VerifySingleResponse) {}
-
+	
 	// CK_RV m_GenerateKey (
 	//     CK_MECHANISM_PTR mech,
 	//     CK_ATTRIBUTE_PTR templateBytes, CK_ULONG templateByteslen,
@@ -208,7 +209,7 @@ service Crypto {
 	//     unsigned char *checkSum, size_t *checkSumlen,
 	//     target_t target) ;
 	rpc GenerateKey(GenerateKeyRequest) returns (GenerateKeyResponse) {}
-
+	
 	// CK_RV m_GenerateKeyPair (
 	//     CK_MECHANISM_PTR mech,
 	//     CK_ATTRIBUTE_PTR pubKeyTemplateBytes, CK_ULONG pubKeyTemplateByteslen,
@@ -218,7 +219,7 @@ service Crypto {
 	//     unsigned char *pubKeyBytes, size_t *pubKeyByteslen,
 	//     target_t target) ;
 	rpc GenerateKeyPair(GenerateKeyPairRequest) returns (GenerateKeyPairResponse) {}
-
+	
 	// CK_RV m_WrapKey (
 	//     const unsigned char *key, size_t keylen,
 	//     const unsigned char *keK, size_t keKlen,
@@ -227,7 +228,7 @@ service Crypto {
 	//     CK_BYTE_PTR wrapped, CK_ULONG_PTR wrappedlen,
 	//     target_t target) ;
 	rpc WrapKey(WrapKeyRequest) returns (WrapKeyResponse) {}
-
+	
 	// CK_RV m_UnwrapKey (
 	//     const CK_BYTE_PTR wrapped, CK_ULONG wrappedlen,
 	//     const unsigned char *keK, size_t keKlen,
@@ -239,7 +240,7 @@ service Crypto {
 	//     CK_BYTE_PTR checkSum, CK_ULONG *checkSumlen,
 	//     target_t target) ;
 	rpc UnwrapKey(UnwrapKeyRequest) returns (UnwrapKeyResponse) {}
-
+	
 	// CK_RV m_DeriveKey (
 	//     CK_MECHANISM_PTR mech,
 	//     CK_ATTRIBUTE_PTR templateBytes, CK_ULONG templateByteslen,
@@ -250,33 +251,33 @@ service Crypto {
 	//     unsigned char *checkSum, size_t *checkSumlen,
 	//     target_t target) ;
 	rpc DeriveKey(DeriveKeyRequest) returns (DeriveKeyResponse) {}
-
+	
 	// CK_RV m_GetMechanismList (
 	//     CK_SLOT_ID slot,
 	//     CK_MECHANISM_TYPE_PTR mechs, CK_ULONG_PTR mechslen,
 	//     target_t target) ;
 	rpc GetMechanismList(GetMechanismListRequest) returns (GetMechanismListResponse) {}
-
+	
 	// CK_RV m_GetMechanismInfo (
 	//     CK_SLOT_ID slot,
 	//     CK_MECHANISM_TYPE mech,
 	//     CK_MECHANISM_INFO_PTR mechInfo,
 	//     target_t target) ;
 	rpc GetMechanismInfo(GetMechanismInfoRequest) returns (GetMechanismInfoResponse) {}
-
+	
 	// CK_RV m_GetAttributeValue (
 	//     const unsigned char *object, size_t objectlen,
 	//     CK_ATTRIBUTE_PTR attributesBytes, CK_ULONG attributesByteslen,
 	//     target_t target) ;
 	rpc GetAttributeValue(GetAttributeValueRequest) returns (GetAttributeValueResponse) {}
-
+	
 	// CK_RV m_SetAttributeValue (
 	//     unsigned char *object, size_t objectlen,
 	//     CK_ATTRIBUTE_PTR attributesBytes, CK_ULONG attributesByteslen,
 	//     target_t target) ;
 	rpc SetAttributeValue(SetAttributeValueRequest) returns (SetAttributeValueResponse) {}
-
-    rpc RewrapKeyBlob (RewrapKeyBlobRequest) returns (RewrapKeyBlobResponse) {}
+	
+	rpc RewrapKeyBlob (RewrapKeyBlobRequest) returns (RewrapKeyBlobResponse) {}
 }
 
 message GenerateRandomRequest {
@@ -611,7 +612,6 @@ message GetAttributeValueResponse {
 
 message SetAttributeValueRequest {
 	bytes Object = 1;
-	map<uint64,bytes> AttributesBytes = 2 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 	map<uint64,AttributeValue> Attributes = 3 [(gogoproto.castkey) = "github.com/IBM-Cloud/hpcs-grep11-go/ep11.Attribute"];
 }
 
@@ -706,9 +706,9 @@ message RewrapKeyBlobResponse {
 
 message AttributeValue {
 	oneof one_attr {
-		bytes AttributeB = 1;
-		bool AttributeTF = 2;
-		int64 AttributeI = 3;
+		bytes AttributeB = 1 [(gogoproto.jsontag) = "AttributeB"];
+		bool AttributeTF = 2 [(gogoproto.jsontag) = "AttributeTF"];
+		int64 AttributeI = 3 [(gogoproto.jsontag) = "AttributeI"];
 	}
 }
 
