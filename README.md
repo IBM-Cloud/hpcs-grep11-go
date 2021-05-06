@@ -40,7 +40,6 @@ Included in this repository are working examples written in Go. The examples sho
     var (
         Address        = "<grep11_server_address>:<port>"
         APIKey         = "<ibm_cloud_apikey>"
-        HPCSInstanceID = "<hpcs_instance_id>"
     )
 	```
 		
