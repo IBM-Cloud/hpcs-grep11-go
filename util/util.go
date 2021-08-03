@@ -13,6 +13,7 @@ import (
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"crypto/rsa"
 	"encoding/asn1"
 	"encoding/binary"
 	"encoding/hex"
@@ -232,6 +233,18 @@ type generalPubKeyASN struct {
 	OIDAlgorithm pubKeyTypeASN
 }
 
+// PKCS#1 public key
+type pubKeyASN struct {
+	Algorithm pubKeyTypeASN
+	PublicKey asn1.BitString
+}
+
+// RSA public key
+type rsaPubKeyASN struct {
+	Modulus  *big.Int
+	Exponent int
+}
+
 // GetPubKey converts an ep11 SPKI structure to a golang ecdsa.PublicKey
 func GetPubKey(spki []byte) (crypto.PublicKey, asn1.ObjectIdentifier, error) {
 	firstDecode := &generalPubKeyASN{}
@@ -257,7 +270,19 @@ func GetPubKey(spki []byte) (crypto.PublicKey, asn1.ObjectIdentifier, error) {
 		return &ecdsa.PublicKey{Curve: curve, X: x, Y: y}, asn1.ObjectIdentifier(OIDECPublicKey), nil
 
 	} else if firstDecode.OIDAlgorithm.KeyType.Equal(OIDRSAPublicKey) {
-		return nil, nil, fmt.Errorf("RSA public key not supported yet")
+		decode := &pubKeyASN{}
+		_, err := asn1.Unmarshal(spki, decode)
+		if err != nil {
+			return nil, nil, fmt.Errorf("Failed unmarshaling PKCS public key: %s", err)
+		}
+
+		key := &rsaPubKeyASN{}
+		_, err = asn1.Unmarshal(decode.PublicKey.Bytes, key)
+		if err != nil {
+			return nil, nil, fmt.Errorf("Failed unmarshaling RSA public key: %s", err)
+		}
+
+		return &rsa.PublicKey{N: key.Modulus, E: key.Exponent}, OIDRSAPublicKey, nil
 	} else {
 		return nil, nil, fmt.Errorf("Unrecognized public key type %v", firstDecode.OIDAlgorithm)
 	}
