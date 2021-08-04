@@ -277,6 +277,18 @@ service Crypto {
 	//     target_t target) ;
 	rpc SetAttributeValue(SetAttributeValueRequest) returns (SetAttributeValueResponse) {}
 	
+	// CK_RV m_Login (
+	//     CK_UTF8CHAR_PTR pin, CK_ULONG pinLen,
+	//     const unsigned char *nonce, size_t noncelen,
+	//     unsigned char *pinblob, size_t *pinbloblen,
+	//     target_t target) ;
+	rpc Login(LoginRequest) returns (LoginResponse) {}
+	
+	// CK_RV m_Logout (
+	//     const unsigned char *pinblob, size_t pinbloblen,
+	//     target_t target) ;
+	rpc Logout(LogoutRequest) returns (LogoutResponse) {}
+	
 	rpc RewrapKeyBlob (RewrapKeyBlobRequest) returns (RewrapKeyBlobResponse) {}
 }
 
@@ -617,6 +629,21 @@ message SetAttributeValueRequest {
 
 message SetAttributeValueResponse {
 	bytes Object = 1;
+}
+
+message LoginRequest {
+	bytes Storeid = 1;
+	bytes Pin = 2;
+}
+
+message LoginResponse {
+	bytes Pinblob = 4;
+}
+
+message LogoutRequest {
+}
+
+message LogoutResponse {
 }
 
 message Mechanism {

@@ -157,6 +157,7 @@ const (
 	CKA_VENDOR_DEFINED_GREP11         Attribute = CKA_VENDOR_DEFINED + 0x40000
 	CKA_GREP11_TOKEN_LABEL            Attribute = CKA_VENDOR_DEFINED_GREP11 + 0x1
 	CKA_GREP11_WKID                   Attribute = CKA_VENDOR_DEFINED_GREP11 + 0x2
+	CKA_GREP11_KEYSTORE_PASSWORD      Attribute = CKA_VENDOR_DEFINED_GREP11 + 0x3
 
 	CKK_RSA               KeyType = 0x00000000
 	CKK_DSA               KeyType = 0x00000001
@@ -907,6 +908,7 @@ var (
 		"CKA_VENDOR_DEFINED_GREP11":         CKA_VENDOR_DEFINED_GREP11,
 		"CKA_GREP11_TOKEN_LABEL":            CKA_GREP11_TOKEN_LABEL,
 		"CKA_GREP11_WKID":                   CKA_GREP11_WKID,
+		"CKA_GREP11_KEYSTORE_PASSWORD":      CKA_GREP11_KEYSTORE_PASSWORD,
 	}
 	AttributeValueToName = map[Attribute]string{
 		CKA_CLASS:                         "CKA_CLASS",
@@ -1032,6 +1034,7 @@ var (
 		CKA_VENDOR_DEFINED_GREP11:         "CKA_VENDOR_DEFINED_GREP11",
 		CKA_GREP11_TOKEN_LABEL:            "CKA_GREP11_TOKEN_LABEL",
 		CKA_GREP11_WKID:                   "CKA_GREP11_WKID",
+		CKA_GREP11_KEYSTORE_PASSWORD:      "CKA_GREP11_KEYSTORE_PASSWORD",
 	}
 	KeyTypeNameToValue = map[string]KeyType{
 		"CKK_RSA":               CKK_RSA,
