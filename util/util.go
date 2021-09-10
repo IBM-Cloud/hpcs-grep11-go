@@ -12,6 +12,7 @@ import (
 	"context"
 	"crypto"
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/elliptic"
 	"crypto/rsa"
 	"encoding/asn1"
@@ -259,6 +260,11 @@ func GetPubKey(spki []byte) (crypto.PublicKey, asn1.ObjectIdentifier, error) {
 		if err != nil {
 			return nil, nil, fmt.Errorf("Failed unmarshaling public key: %s", err)
 		}
+
+		if decode.Ident.Curve.Equal(OIDNamedCurveED25519) {
+			return ed25519.PublicKey(decode.Point.Bytes), OIDNamedCurveED25519, nil
+		}
+
 		curve := GetNamedCurveFromOID(decode.Ident.Curve)
 		if curve == nil {
 			return nil, nil, fmt.Errorf("Unrecognized Curve from OID %v", decode.Ident.Curve)
