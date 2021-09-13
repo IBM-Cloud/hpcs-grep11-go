@@ -33,17 +33,15 @@ import (
 
 // The following IBM Cloud HPCS service items need to be changed prior to running the sample program
 var (
-	Address        = "<grep11_server_address>:<port>"
-	APIKey         = "<ibm_cloud_apikey>"
-	HPCSInstanceID = "<hpcs_instance_id>"
-	IAMEndpoint    = "https://iam.cloud.ibm.com"
+	Address     = "<grep11_server_address>:<port>"
+	APIKey      = "<ibm_cloud_apikey>"
+	IAMEndpoint = "https://iam.cloud.ibm.com"
 )
 
 var callOpts = []grpc.DialOption{
 	grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
 	grpc.WithPerRPCCredentials(&util.IAMPerRPCCredentials{
 		APIKey:   APIKey,
-		Instance: HPCSInstanceID,
 		Endpoint: IAMEndpoint,
 	}),
 }
