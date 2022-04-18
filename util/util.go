@@ -159,6 +159,9 @@ var (
 	OIDDHPublicKey         = asn1.ObjectIdentifier{1, 2, 840, 10046, 2}
 	OIDNamedCurveSecp256k1 = asn1.ObjectIdentifier{1, 3, 132, 0, 10}
 	OIDNamedCurveED25519   = asn1.ObjectIdentifier{1, 3, 101, 112}
+
+	// Supported Dilithium strengths
+	OIDDilithiumHigh = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 2, 267, 1, 6, 5} // Round 2 strength
 )
 
 // GetNamedCurveFromOID returns an elliptic curve from the specified curve OID
