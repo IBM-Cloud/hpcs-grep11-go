@@ -365,7 +365,6 @@ func Example_signAndVerifyUsingRSAKeyPair() {
 	}
 	fmt.Println("Generated RSA PKCS key pair")
 
-	// Sign data
 	signInitRequest := &pb.SignInitRequest{
 		Mech:    &pb.Mechanism{Mechanism: ep11.CKM_SHA1_RSA_PKCS},
 		PrivKey: generateKeyPairResponse.PrivKeyBytes,
@@ -380,6 +379,8 @@ func Example_signAndVerifyUsingRSAKeyPair() {
 		State: signInitResponse.State,
 		Data:  []byte(signData[:]),
 	}
+
+	// Sign the data
 	SignResponse, err := cryptoClient.Sign(context.Background(), signRequest)
 	if err != nil {
 		panic(fmt.Errorf("Sign error: %s", err))
@@ -469,7 +470,6 @@ func Example_signAndVerifyUsingDSAKeyPair() {
 	}
 	fmt.Println("Generated DSA key pair")
 
-	// Sign data
 	signInitRequest := &pb.SignInitRequest{
 		Mech:    &pb.Mechanism{Mechanism: ep11.CKM_DSA_SHA1},
 		PrivKey: generateKeyPairResponse.PrivKeyBytes,
@@ -729,7 +729,6 @@ func Example_signAndVerifyUsingECDSAKeyPair() {
 
 	fmt.Println("Generated ECDSA PKCS key pair")
 
-	// Sign data
 	signInitRequest := &pb.SignInitRequest{
 		Mech:    &pb.Mechanism{Mechanism: ep11.CKM_ECDSA},
 		PrivKey: generateKeyPairResponse.PrivKeyBytes,
@@ -820,7 +819,6 @@ func Example_signAndVerifyToTestErrorHandling() {
 
 	fmt.Println("Generated ECDSA key pair")
 
-	// Sign data
 	signInitRequest := &pb.SignInitRequest{
 		Mech:    &pb.Mechanism{Mechanism: ep11.CKM_ECDSA},
 		PrivKey: generateKeyPairResponse.PrivKeyBytes,
@@ -1109,12 +1107,238 @@ func Example_deriveKey() {
 		fmt.Println("Alice and Bob get the same derived key")
 	}
 
-	return
-
 	// Output:
 	// Generated Alice EC key pair
 	// Generated Bob EC key pair
 	// Alice and Bob get the same derived key
+}
+
+// Example_wrapAndUnWrapAttributeBoundKey wraps an AES key with a RSA public key and then unwraps it with the RSA private key
+// Flow: connect, generate generic symmetric key for MAC use, generate AES key, generate RSA key pair, wrap/unwrap AES key with RSA key pair
+func Example_wrapAndUnwrapAttributeBoundKey() {
+	conn, err := grpc.Dial(Address, callOpts...)
+	if err != nil {
+		panic(fmt.Errorf("Could not connect to server: %s", err))
+	}
+	defer conn.Close()
+
+	cryptoClient := pb.NewCryptoClient(conn)
+
+	// Create MAC Key
+	keyLen := 128 // bits
+	macKeyTemplate := ep11.EP11Attributes{
+		ep11.CKA_KEY_TYPE:      ep11.CKK_GENERIC_SECRET,
+		ep11.CKA_CLASS:         ep11.CKO_SECRET_KEY,
+		ep11.CKA_VALUE_LEN:     keyLen / 8,
+		ep11.CKA_EXTRACTABLE:   false,
+		ep11.CKA_IBM_ATTRBOUND: true,
+	}
+
+	generateMacKeyRequest := &pb.GenerateKeyRequest{
+		Mech:     &pb.Mechanism{Mechanism: ep11.CKM_GENERIC_SECRET_KEY_GEN},
+		Template: util.AttributeMap(macKeyTemplate),
+	}
+
+	generateMacKeyResponse, err := cryptoClient.GenerateKey(context.Background(), generateMacKeyRequest)
+	if err != nil {
+		panic(fmt.Errorf("GenerateKey Error: %s", err))
+	}
+
+	fmt.Println("Generated Generic MAC key")
+
+	// Generate a AES key
+	aesKeyTemplate := ep11.EP11Attributes{
+		ep11.CKA_VALUE_LEN:     128 / 8,
+		ep11.CKA_ENCRYPT:       true,
+		ep11.CKA_DECRYPT:       true,
+		ep11.CKA_EXTRACTABLE:   true, // must be true to be wrapped
+		ep11.CKA_IBM_ATTRBOUND: true,
+	}
+	generateKeyRequest := &pb.GenerateKeyRequest{
+		Mech:     &pb.Mechanism{Mechanism: ep11.CKM_AES_KEY_GEN},
+		Template: util.AttributeMap(aesKeyTemplate),
+	}
+	generateKeyResponse, err := cryptoClient.GenerateKey(context.Background(), generateKeyRequest)
+	if err != nil {
+		panic(fmt.Errorf("Generate AES key error: %s", err))
+	} else {
+		fmt.Println("Generated AES key")
+	}
+
+	// Generate RSA key pairs
+	publicExponent := 17
+	publicKeyTemplate := ep11.EP11Attributes{
+		ep11.CKA_ENCRYPT:         true,
+		ep11.CKA_WRAP:            true, // to wrap a key
+		ep11.CKA_MODULUS_BITS:    2048,
+		ep11.CKA_PUBLIC_EXPONENT: publicExponent,
+		ep11.CKA_EXTRACTABLE:     false,
+		ep11.CKA_IBM_ATTRBOUND:   true,
+	}
+	privateKeyTemplate := ep11.EP11Attributes{
+		ep11.CKA_PRIVATE:       true,
+		ep11.CKA_SENSITIVE:     true,
+		ep11.CKA_DECRYPT:       true,
+		ep11.CKA_UNWRAP:        true, // to unwrap a key
+		ep11.CKA_EXTRACTABLE:   false,
+		ep11.CKA_IBM_ATTRBOUND: true,
+	}
+	generateKeypairRequest := &pb.GenerateKeyPairRequest{
+		Mech:            &pb.Mechanism{Mechanism: ep11.CKM_RSA_PKCS_KEY_PAIR_GEN},
+		PubKeyTemplate:  util.AttributeMap(publicKeyTemplate),
+		PrivKeyTemplate: util.AttributeMap(privateKeyTemplate),
+	}
+	generateKeyPairResponse, err := cryptoClient.GenerateKeyPair(context.Background(), generateKeypairRequest)
+	if err != nil {
+		panic(fmt.Errorf("GenerateKeyPair error: %s", err))
+	}
+	fmt.Println("Generated RSA PKCS key pair")
+
+	wrapKeyRequest := &pb.WrapKeyRequest{
+		Mech:   &pb.Mechanism{Mechanism: ep11.CKM_IBM_ATTRIBUTEBOUND_WRAP},
+		KeK:    generateKeyPairResponse.PubKeyBytes,
+		Key:    generateKeyResponse.KeyBytes,
+		MacKey: generateMacKeyResponse.KeyBytes,
+	}
+
+	// Wrap the AES key
+	wrapKeyResponse, err := cryptoClient.WrapKey(context.Background(), wrapKeyRequest)
+	if err != nil {
+		panic(fmt.Errorf("Wrap AES key error: %s", err))
+	}
+	fmt.Println("Wrapped AES key")
+
+	aesUnwrapKeyTemplate := ep11.EP11Attributes{
+		ep11.CKA_CLASS:       ep11.CKO_SECRET_KEY,
+		ep11.CKA_KEY_TYPE:    ep11.CKK_AES,
+		ep11.CKA_VALUE_LEN:   128 / 8,
+		ep11.CKA_ENCRYPT:     true,
+		ep11.CKA_DECRYPT:     true,
+		ep11.CKA_EXTRACTABLE: true, // must be true to be wrapped
+	}
+	unwrapRequest := &pb.UnwrapKeyRequest{
+		Mech:     &pb.Mechanism{Mechanism: ep11.CKM_IBM_ATTRIBUTEBOUND_WRAP},
+		KeK:      generateKeyPairResponse.PrivKeyBytes,
+		MacKey:   generateMacKeyResponse.KeyBytes,
+		Wrapped:  wrapKeyResponse.Wrapped,
+		Template: util.AttributeMap(aesUnwrapKeyTemplate),
+	}
+
+	// Unwrap the AES key
+	unwrappedResponse, err := cryptoClient.UnwrapKey(context.Background(), unwrapRequest)
+	if err != nil {
+		panic(fmt.Errorf("Unwrap AES key error: %s", err))
+	}
+	if !bytes.Equal(generateKeyResponse.GetCheckSum()[:3], unwrappedResponse.GetCheckSum()[:3]) {
+		panic(fmt.Errorf("Unwrap AES key has a different checksum than the original key"))
+	} else {
+		fmt.Println("Unwrapped AES key")
+	}
+
+	// Output:
+	// Generated Generic MAC key
+	// Generated AES key
+	// Generated RSA PKCS key pair
+	// Wrapped AES key
+	// Unwrapped AES key
+}
+
+// Test_signAndVerifyUsingDilithiumKeyPair generates a Dilithium key pair
+// then uses the key pair to sign and verify a sample message
+// Flow: connect, generate Dilithium key pair, sign PKCS #11 single-part data, verify PKCS #11 single-part data
+
+// NOTE: Using the Dilithium mechanism is hardware and firmware dependent.  If you receive an error indicating
+//       that the CKM_IBM_DILITHIUM mechanism is invalid then the remote HSM currently does not support this mechanism.
+func Test_signAndVerifyUsingDilithiumKeyPair(t *testing.T) {
+	conn, err := grpc.Dial(Address, callOpts...)
+	if err != nil {
+		panic(fmt.Errorf("Could not connect to server: %s", err))
+	}
+	defer conn.Close()
+	cryptoClient := pb.NewCryptoClient(conn)
+
+	// Setup PQC parameter and key templates
+	dilithiumStrengthParam, err := asn1.Marshal(util.OIDDilithiumHigh)
+	if err != nil {
+		panic(fmt.Errorf("Unable to encode parameter OID: %s", err))
+	}
+
+	publicKeyTemplate := ep11.EP11Attributes{
+		ep11.CKA_IBM_PQC_PARAMS: dilithiumStrengthParam,
+		ep11.CKA_VERIFY:         true,
+		ep11.CKA_EXTRACTABLE:    false,
+	}
+	privateKeyTemplate := ep11.EP11Attributes{
+		ep11.CKA_SIGN:        true,
+		ep11.CKA_EXTRACTABLE: false,
+	}
+	generateDilKeyPairRequest := &pb.GenerateKeyPairRequest{
+		Mech:            &pb.Mechanism{Mechanism: ep11.CKM_IBM_DILITHIUM},
+		PubKeyTemplate:  util.AttributeMap(publicKeyTemplate),
+		PrivKeyTemplate: util.AttributeMap(privateKeyTemplate),
+	}
+
+	// Dilithium Key Pair generation
+	generateDilKeyPairResponse, err := cryptoClient.GenerateKeyPair(context.Background(), generateDilKeyPairRequest)
+	if ok, ep11Status := util.Convert(err); !ok {
+		if ep11Status.Code == ep11.CKR_MECHANISM_INVALID {
+			fmt.Println("Dilithium mechanism is not supported on the remote HSM")
+			return
+		} else {
+			panic(fmt.Errorf("Generate Dilithium key pair error: %s", err))
+		}
+	}
+
+	fmt.Println("Generated Dilithium key pair")
+
+	signInitRequest := &pb.SignInitRequest{
+		Mech:    &pb.Mechanism{Mechanism: ep11.CKM_IBM_DILITHIUM},
+		PrivKey: generateDilKeyPairResponse.PrivKeyBytes,
+	}
+	signInitResponse, err := cryptoClient.SignInit(context.Background(), signInitRequest)
+	if err != nil {
+		panic(fmt.Errorf("SignInit error: %s", err))
+	}
+
+	signData := sha256.Sum256([]byte("This data needs to be signed"))
+	signRequest := &pb.SignRequest{
+		State: signInitResponse.State,
+		Data:  signData[:],
+	}
+
+	// Sign the data
+	SignResponse, err := cryptoClient.Sign(context.Background(), signRequest)
+	if err != nil {
+		panic(fmt.Errorf("Sign error: %s", err))
+	}
+
+	fmt.Println("Data signed")
+
+	verifyInitRequest := &pb.VerifyInitRequest{
+		Mech:   &pb.Mechanism{Mechanism: ep11.CKM_IBM_DILITHIUM},
+		PubKey: generateDilKeyPairResponse.PubKeyBytes,
+	}
+	verifyInitResponse, err := cryptoClient.VerifyInit(context.Background(), verifyInitRequest)
+	if err != nil {
+		panic(fmt.Errorf("VerifyInit error: %s", err))
+	}
+
+	verifyRequest := &pb.VerifyRequest{
+		State:     verifyInitResponse.State,
+		Data:      []byte(signData[:]),
+		Signature: SignResponse.Signature,
+	}
+
+	// Verify the data
+	_, err = cryptoClient.Verify(context.Background(), verifyRequest)
+	if ok, ep11Status := util.Convert(err); !ok {
+		if ep11Status.Code == ep11.CKR_SIGNATURE_INVALID {
+			panic(fmt.Errorf("Invalid signature"))
+		} else {
+			panic(fmt.Errorf("Verify error: [%d]: %s", ep11Status.Code, ep11Status.Detail))
+		}
+	}
+	fmt.Println("Verified")
 }
 
 // Test_rewrapKeyBlob re-encrypts generated key blobs with the new committed wrapping key that is contained within the HSM.
