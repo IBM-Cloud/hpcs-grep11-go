@@ -17,6 +17,7 @@ import (
 )
 
 type Attribute uint64
+type CertType uint64
 type KeyType uint64
 type Mechanism uint64
 type MechanismInfoFlag uint64
@@ -153,11 +154,20 @@ const (
 	CKA_IBM_PROTKEY_EXTRACTABLE       Attribute = CKA_VENDOR_DEFINED + 0x1000c
 	CKA_IBM_PROTKEY_NEVER_EXTRACTABLE Attribute = CKA_VENDOR_DEFINED + 0x1000d
 	CKA_IBM_PQC_PARAMS                Attribute = CKA_VENDOR_DEFINED + 0x1000e
+	CKA_IBM_LOGIN_SESSION             Attribute = CKA_VENDOR_DEFINED + 0x1000f
 	CKA_IBM_WIRETEST                  Attribute = CKA_VENDOR_DEFINED + 0x20001
+	CKA_IBM_MACED_PUBLIC_KEY_INFO     Attribute = CKA_VENDOR_DEFINED + 0x20002
 	CKA_VENDOR_DEFINED_GREP11         Attribute = CKA_VENDOR_DEFINED + 0x40000
 	CKA_GREP11_TOKEN_LABEL            Attribute = CKA_VENDOR_DEFINED_GREP11 + 0x1
 	CKA_GREP11_WKID                   Attribute = CKA_VENDOR_DEFINED_GREP11 + 0x2
 	CKA_GREP11_KEYSTORE_PASSWORD      Attribute = CKA_VENDOR_DEFINED_GREP11 + 0x3
+	CKA_GREP11_KEYBLOB_HAS_ROTATION   Attribute = CKA_VENDOR_DEFINED_GREP11 + 0x4
+	CKA_GREP11_NEXTWKID               Attribute = CKA_VENDOR_DEFINED_GREP11 + 0x5
+
+	CKC_X_509           CertType = 0x00000000
+	CKC_X_509_ATTR_CERT CertType = 0x00000001
+	CKC_WTLS            CertType = 0x00000002
+	CKC_VENDOR_DEFINED  CertType = 0x80000000
 
 	CKK_RSA               KeyType = 0x00000000
 	CKK_DSA               KeyType = 0x00000001
@@ -204,6 +214,7 @@ const (
 	CKK_GOST28147         KeyType = 0x00000032
 	CKK_VENDOR_DEFINED    KeyType = 0x80000000
 	CKK_IBM_PQC_DILITHIUM KeyType = CKK_VENDOR_DEFINED + 0x10023
+	CKK_IBM_PQC_KYBER     KeyType = CKK_VENDOR_DEFINED + 0x10024
 
 	CKM_RSA_PKCS_KEY_PAIR_GEN          Mechanism = 0x00000000
 	CKM_RSA_PKCS                       Mechanism = 0x00000001
@@ -560,12 +571,15 @@ const (
 	CKM_IBM_ED448_SHA3                 Mechanism = CKM_VENDOR_DEFINED + 0x1001f
 	CKM_IBM_SIPHASH                    Mechanism = CKM_VENDOR_DEFINED + 0x10021
 	CKM_IBM_DILITHIUM                  Mechanism = CKM_VENDOR_DEFINED + 0x10023
+	CKM_IBM_KYBER                      Mechanism = CKM_VENDOR_DEFINED + 0x10024
 	CKM_IBM_SHA3_224_HMAC              Mechanism = CKM_VENDOR_DEFINED + 0x10025
 	CKM_IBM_SHA3_256_HMAC              Mechanism = CKM_VENDOR_DEFINED + 0x10026
 	CKM_IBM_SHA3_384_HMAC              Mechanism = CKM_VENDOR_DEFINED + 0x10027
 	CKM_IBM_SHA3_512_HMAC              Mechanism = CKM_VENDOR_DEFINED + 0x10028
 	CKM_IBM_EC_X25519_RAW              Mechanism = CKM_VENDOR_DEFINED + 0x10029
 	CKM_IBM_EC_X448_RAW                Mechanism = CKM_VENDOR_DEFINED + 0x10030
+	CKM_IBM_ECDSA_OTHER                Mechanism = CKM_VENDOR_DEFINED + 0x10031
+	CKM_IBM_EC_AGGREGATE               Mechanism = CKM_VENDOR_DEFINED + 0x10034
 	CKM_IBM_CLEARKEY_TRANSPORT         Mechanism = CKM_VENDOR_DEFINED + 0x20001
 	CKM_IBM_ATTRIBUTEBOUND_WRAP        Mechanism = CKM_VENDOR_DEFINED + 0x20004
 	CKM_IBM_TRANSPORTKEY               Mechanism = CKM_VENDOR_DEFINED + 0x20005
@@ -574,6 +588,8 @@ const (
 	CKM_IBM_WIRETEST                   Mechanism = CKM_VENDOR_DEFINED + 0x30004
 	CKM_IBM_RETAINKEY                  Mechanism = CKM_VENDOR_DEFINED + 0x40001
 	CKM_IBM_CPACF_WRAP                 Mechanism = CKM_VENDOR_DEFINED + 0x60001
+	CKM_IBM_BTC_DERIVE                 Mechanism = CKM_VENDOR_DEFINED + 0x70001
+	CKM_IBM_ETH_DERIVE                 Mechanism = CKM_VENDOR_DEFINED + 0x70002
 
 	CKF_DONT_BLOCK                     MechanismInfoFlag = 0x00000001
 	CKF_HW                             MechanismInfoFlag = 0x00000001
@@ -753,6 +769,10 @@ const (
 	CKR_IBM_PERF_CATEGORY_INVALID        Return = CKR_VENDOR_DEFINED + 0x10012
 	CKR_IBM_API_MISMATCH                 Return = CKR_VENDOR_DEFINED + 0x10013
 	CKR_IBM_TARGET_INVALID               Return = CKR_VENDOR_DEFINED + 0x10030
+	CKR_IBM_PQC_PARAMS_NOT_SUPPORTED     Return = CKR_VENDOR_DEFINED + 0x10031
+	CKR_IBM_PARAM_NOT_SUPPORTED          Return = CKR_VENDOR_DEFINED + 0x10032
+	CKR_IBM_SESSION_IMMUTABLE            Return = CKR_VENDOR_DEFINED + 0x10033
+	CKR_IBM_ERROR_STATE                  Return = CKR_VENDOR_DEFINED + 0x10101
 	CKR_VENDOR_DEFINED_GREP11            Return = CKR_VENDOR_DEFINED + 0x40000
 	CKR_IBM_GREP11_NOT_AUTHENTICATED     Return = CKR_VENDOR_DEFINED_GREP11 + 0x1
 	CKR_IBM_GREP11_CANNOT_UNMARSHAL      Return = CKR_VENDOR_DEFINED_GREP11 + 0x2
@@ -760,9 +780,10 @@ const (
 	CKR_IBM_GREP11_CONFLICT              Return = CKR_VENDOR_DEFINED_GREP11 + 0x4
 	CKR_IBM_GREP11_DBINTERNAL            Return = CKR_VENDOR_DEFINED_GREP11 + 0x5
 	CKR_IBM_GREP11_MISSING               Return = CKR_VENDOR_DEFINED_GREP11 + 0x6
+	CKR_IBM_GREP11_REPLAY                Return = CKR_VENDOR_DEFINED_GREP11 + 0x7
 
 	// Maximum Key Size
-	MAX_BLOB_SIZE = 8192
+	MAX_BLOB_SIZE = 9216
 	MAX_CSUMSIZE  = 64
 
 	// Max block size of block ciphers
@@ -904,11 +925,15 @@ var (
 		"CKA_IBM_PROTKEY_EXTRACTABLE":       CKA_IBM_PROTKEY_EXTRACTABLE,
 		"CKA_IBM_PROTKEY_NEVER_EXTRACTABLE": CKA_IBM_PROTKEY_NEVER_EXTRACTABLE,
 		"CKA_IBM_PQC_PARAMS":                CKA_IBM_PQC_PARAMS,
+		"CKA_IBM_LOGIN_SESSION":             CKA_IBM_LOGIN_SESSION,
 		"CKA_IBM_WIRETEST":                  CKA_IBM_WIRETEST,
+		"CKA_IBM_MACED_PUBLIC_KEY_INFO":     CKA_IBM_MACED_PUBLIC_KEY_INFO,
 		"CKA_VENDOR_DEFINED_GREP11":         CKA_VENDOR_DEFINED_GREP11,
 		"CKA_GREP11_TOKEN_LABEL":            CKA_GREP11_TOKEN_LABEL,
 		"CKA_GREP11_WKID":                   CKA_GREP11_WKID,
 		"CKA_GREP11_KEYSTORE_PASSWORD":      CKA_GREP11_KEYSTORE_PASSWORD,
+		"CKA_GREP11_KEYBLOB_HAS_ROTATION":   CKA_GREP11_KEYBLOB_HAS_ROTATION,
+		"CKA_GREP11_NEXTWKID":               CKA_GREP11_NEXTWKID,
 	}
 	AttributeValueToName = map[Attribute]string{
 		CKA_CLASS:                         "CKA_CLASS",
@@ -1030,11 +1055,27 @@ var (
 		CKA_IBM_PROTKEY_EXTRACTABLE:       "CKA_IBM_PROTKEY_EXTRACTABLE",
 		CKA_IBM_PROTKEY_NEVER_EXTRACTABLE: "CKA_IBM_PROTKEY_NEVER_EXTRACTABLE",
 		CKA_IBM_PQC_PARAMS:                "CKA_IBM_PQC_PARAMS",
+		CKA_IBM_LOGIN_SESSION:             "CKA_IBM_LOGIN_SESSION",
 		CKA_IBM_WIRETEST:                  "CKA_IBM_WIRETEST",
+		CKA_IBM_MACED_PUBLIC_KEY_INFO:     "CKA_IBM_MACED_PUBLIC_KEY_INFO",
 		CKA_VENDOR_DEFINED_GREP11:         "CKA_VENDOR_DEFINED_GREP11",
 		CKA_GREP11_TOKEN_LABEL:            "CKA_GREP11_TOKEN_LABEL",
 		CKA_GREP11_WKID:                   "CKA_GREP11_WKID",
 		CKA_GREP11_KEYSTORE_PASSWORD:      "CKA_GREP11_KEYSTORE_PASSWORD",
+		CKA_GREP11_KEYBLOB_HAS_ROTATION:   "CKA_GREP11_KEYBLOB_HAS_ROTATION",
+		CKA_GREP11_NEXTWKID:               "CKA_GREP11_NEXTWKID",
+	}
+	CertTypeNameToValue = map[string]CertType{
+		"CKC_X_509":           CKC_X_509,
+		"CKC_X_509_ATTR_CERT": CKC_X_509_ATTR_CERT,
+		"CKC_WTLS":            CKC_WTLS,
+		"CKC_VENDOR_DEFINED":  CKC_VENDOR_DEFINED,
+	}
+	CertTypeValueToName = map[CertType]string{
+		CKC_X_509:           "CKC_X_509",
+		CKC_X_509_ATTR_CERT: "CKC_X_509_ATTR_CERT",
+		CKC_WTLS:            "CKC_WTLS",
+		CKC_VENDOR_DEFINED:  "CKC_VENDOR_DEFINED",
 	}
 	KeyTypeNameToValue = map[string]KeyType{
 		"CKK_RSA":               CKK_RSA,
@@ -1082,6 +1123,7 @@ var (
 		"CKK_GOST28147":         CKK_GOST28147,
 		"CKK_VENDOR_DEFINED":    CKK_VENDOR_DEFINED,
 		"CKK_IBM_PQC_DILITHIUM": CKK_IBM_PQC_DILITHIUM,
+		"CKK_IBM_PQC_KYBER":     CKK_IBM_PQC_KYBER,
 	}
 	KeyTypeValueToName = map[KeyType]string{
 		CKK_RSA:               "CKK_RSA",
@@ -1127,6 +1169,7 @@ var (
 		CKK_GOST28147:         "CKK_GOST28147",
 		CKK_VENDOR_DEFINED:    "CKK_VENDOR_DEFINED",
 		CKK_IBM_PQC_DILITHIUM: "CKK_IBM_PQC_DILITHIUM",
+		CKK_IBM_PQC_KYBER:     "CKK_IBM_PQC_KYBER",
 	}
 	MechanismNameToValue = map[string]Mechanism{
 		"CKM_RSA_PKCS_KEY_PAIR_GEN":          CKM_RSA_PKCS_KEY_PAIR_GEN,
@@ -1484,12 +1527,15 @@ var (
 		"CKM_IBM_ED448_SHA3":                 CKM_IBM_ED448_SHA3,
 		"CKM_IBM_SIPHASH":                    CKM_IBM_SIPHASH,
 		"CKM_IBM_DILITHIUM":                  CKM_IBM_DILITHIUM,
+		"CKM_IBM_KYBER":                      CKM_IBM_KYBER,
 		"CKM_IBM_SHA3_224_HMAC":              CKM_IBM_SHA3_224_HMAC,
 		"CKM_IBM_SHA3_256_HMAC":              CKM_IBM_SHA3_256_HMAC,
 		"CKM_IBM_SHA3_384_HMAC":              CKM_IBM_SHA3_384_HMAC,
 		"CKM_IBM_SHA3_512_HMAC":              CKM_IBM_SHA3_512_HMAC,
 		"CKM_IBM_EC_X25519_RAW":              CKM_IBM_EC_X25519_RAW,
 		"CKM_IBM_EC_X448_RAW":                CKM_IBM_EC_X448_RAW,
+		"CKM_IBM_ECDSA_OTHER":                CKM_IBM_ECDSA_OTHER,
+		"CKM_IBM_EC_AGGREGATE":               CKM_IBM_EC_AGGREGATE,
 		"CKM_IBM_CLEARKEY_TRANSPORT":         CKM_IBM_CLEARKEY_TRANSPORT,
 		"CKM_IBM_ATTRIBUTEBOUND_WRAP":        CKM_IBM_ATTRIBUTEBOUND_WRAP,
 		"CKM_IBM_TRANSPORTKEY":               CKM_IBM_TRANSPORTKEY,
@@ -1498,6 +1544,8 @@ var (
 		"CKM_IBM_WIRETEST":                   CKM_IBM_WIRETEST,
 		"CKM_IBM_RETAINKEY":                  CKM_IBM_RETAINKEY,
 		"CKM_IBM_CPACF_WRAP":                 CKM_IBM_CPACF_WRAP,
+		"CKM_IBM_BTC_DERIVE":                 CKM_IBM_BTC_DERIVE,
+		"CKM_IBM_ETH_DERIVE":                 CKM_IBM_ETH_DERIVE,
 	}
 	MechanismValueToName = map[Mechanism]string{
 		CKM_RSA_PKCS_KEY_PAIR_GEN:          "CKM_RSA_PKCS_KEY_PAIR_GEN",
@@ -1846,12 +1894,15 @@ var (
 		CKM_IBM_ED448_SHA3:                 "CKM_IBM_ED448_SHA3",
 		CKM_IBM_SIPHASH:                    "CKM_IBM_SIPHASH",
 		CKM_IBM_DILITHIUM:                  "CKM_IBM_DILITHIUM",
+		CKM_IBM_KYBER:                      "CKM_IBM_KYBER",
 		CKM_IBM_SHA3_224_HMAC:              "CKM_IBM_SHA3_224_HMAC",
 		CKM_IBM_SHA3_256_HMAC:              "CKM_IBM_SHA3_256_HMAC",
 		CKM_IBM_SHA3_384_HMAC:              "CKM_IBM_SHA3_384_HMAC",
 		CKM_IBM_SHA3_512_HMAC:              "CKM_IBM_SHA3_512_HMAC",
 		CKM_IBM_EC_X25519_RAW:              "CKM_IBM_EC_X25519_RAW",
 		CKM_IBM_EC_X448_RAW:                "CKM_IBM_EC_X448_RAW",
+		CKM_IBM_ECDSA_OTHER:                "CKM_IBM_ECDSA_OTHER",
+		CKM_IBM_EC_AGGREGATE:               "CKM_IBM_EC_AGGREGATE",
 		CKM_IBM_CLEARKEY_TRANSPORT:         "CKM_IBM_CLEARKEY_TRANSPORT",
 		CKM_IBM_ATTRIBUTEBOUND_WRAP:        "CKM_IBM_ATTRIBUTEBOUND_WRAP",
 		CKM_IBM_TRANSPORTKEY:               "CKM_IBM_TRANSPORTKEY",
@@ -1860,6 +1911,8 @@ var (
 		CKM_IBM_WIRETEST:                   "CKM_IBM_WIRETEST",
 		CKM_IBM_RETAINKEY:                  "CKM_IBM_RETAINKEY",
 		CKM_IBM_CPACF_WRAP:                 "CKM_IBM_CPACF_WRAP",
+		CKM_IBM_BTC_DERIVE:                 "CKM_IBM_BTC_DERIVE",
+		CKM_IBM_ETH_DERIVE:                 "CKM_IBM_ETH_DERIVE",
 	}
 	MechanismInfoFlagNameToValue = map[string]MechanismInfoFlag{
 		"CKF_DONT_BLOCK":                     CKF_DONT_BLOCK,
@@ -2055,6 +2108,10 @@ var (
 		"CKR_IBM_PERF_CATEGORY_INVALID":        CKR_IBM_PERF_CATEGORY_INVALID,
 		"CKR_IBM_API_MISMATCH":                 CKR_IBM_API_MISMATCH,
 		"CKR_IBM_TARGET_INVALID":               CKR_IBM_TARGET_INVALID,
+		"CKR_IBM_PQC_PARAMS_NOT_SUPPORTED":     CKR_IBM_PQC_PARAMS_NOT_SUPPORTED,
+		"CKR_IBM_PARAM_NOT_SUPPORTED":          CKR_IBM_PARAM_NOT_SUPPORTED,
+		"CKR_IBM_SESSION_IMMUTABLE":            CKR_IBM_SESSION_IMMUTABLE,
+		"CKR_IBM_ERROR_STATE":                  CKR_IBM_ERROR_STATE,
 		"CKR_VENDOR_DEFINED_GREP11":            CKR_VENDOR_DEFINED_GREP11,
 		"CKR_IBM_GREP11_NOT_AUTHENTICATED":     CKR_IBM_GREP11_NOT_AUTHENTICATED,
 		"CKR_IBM_GREP11_CANNOT_UNMARSHAL":      CKR_IBM_GREP11_CANNOT_UNMARSHAL,
@@ -2062,6 +2119,7 @@ var (
 		"CKR_IBM_GREP11_CONFLICT":              CKR_IBM_GREP11_CONFLICT,
 		"CKR_IBM_GREP11_DBINTERNAL":            CKR_IBM_GREP11_DBINTERNAL,
 		"CKR_IBM_GREP11_MISSING":               CKR_IBM_GREP11_MISSING,
+		"CKR_IBM_GREP11_REPLAY":                CKR_IBM_GREP11_REPLAY,
 	}
 	ReturnValueToName = map[Return]string{
 		CKR_OK:                               "CKR_OK",
@@ -2176,6 +2234,10 @@ var (
 		CKR_IBM_PERF_CATEGORY_INVALID:        "CKR_IBM_PERF_CATEGORY_INVALID",
 		CKR_IBM_API_MISMATCH:                 "CKR_IBM_API_MISMATCH",
 		CKR_IBM_TARGET_INVALID:               "CKR_IBM_TARGET_INVALID",
+		CKR_IBM_PQC_PARAMS_NOT_SUPPORTED:     "CKR_IBM_PQC_PARAMS_NOT_SUPPORTED",
+		CKR_IBM_PARAM_NOT_SUPPORTED:          "CKR_IBM_PARAM_NOT_SUPPORTED",
+		CKR_IBM_SESSION_IMMUTABLE:            "CKR_IBM_SESSION_IMMUTABLE",
+		CKR_IBM_ERROR_STATE:                  "CKR_IBM_ERROR_STATE",
 		CKR_VENDOR_DEFINED_GREP11:            "CKR_VENDOR_DEFINED_GREP11",
 		CKR_IBM_GREP11_NOT_AUTHENTICATED:     "CKR_IBM_GREP11_NOT_AUTHENTICATED",
 		CKR_IBM_GREP11_CANNOT_UNMARSHAL:      "CKR_IBM_GREP11_CANNOT_UNMARSHAL",
@@ -2183,6 +2245,7 @@ var (
 		CKR_IBM_GREP11_CONFLICT:              "CKR_IBM_GREP11_CONFLICT",
 		CKR_IBM_GREP11_DBINTERNAL:            "CKR_IBM_GREP11_DBINTERNAL",
 		CKR_IBM_GREP11_MISSING:               "CKR_IBM_GREP11_MISSING",
+		CKR_IBM_GREP11_REPLAY:                "CKR_IBM_GREP11_REPLAY",
 	}
 )
 
@@ -2257,6 +2320,80 @@ func (c *Attribute) FromString(s string) error {
 	}
 
 	*c = Attribute(vv)
+	return nil
+}
+
+// MarshalJSON is generated so CertType satisfies json.Marshaler.
+func (c CertType) MarshalJSON() ([]byte, error) {
+	s, ok := CertTypeValueToName[c]
+	if !ok {
+		s = c.String()
+	}
+	return json.Marshal(s)
+}
+
+// UnmarshalJSON is generated so CertType satisfies json.Unmarshaler.
+func (c *CertType) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("CertType should be a string, got %s", data)
+	}
+
+	return c.FromString(s)
+}
+
+// Workaround for a strange Map behaviour
+func (c CertType) MarshalText() (text []byte, err error) {
+	return []byte(c.String()), nil
+}
+
+func (c *CertType) UnmarshalText(text []byte) error {
+	return c.FromString(string(text))
+}
+
+// JSONPBMarshaler is implemented by protobuf messages that customize the
+// way they are marshaled to JSON. Messages that implement this should
+// also implement JSONPBUnmarshaler so that the custom format can be
+// parsed.
+func (c CertType) MarshalJSONPB(*jsonpb.Marshaler) ([]byte, error) {
+	return c.MarshalJSON()
+}
+
+// JSONPBUnmarshaler is implemented by protobuf messages that customize
+// the way they are unmarshaled from JSON. Messages that implement this
+// should also implement JSONPBMarshaler so that the custom format can be
+// produced.
+func (c *CertType) UnmarshalJSONPB(m *jsonpb.Unmarshaler, d []byte) error {
+	err := c.UnmarshalJSON(d)
+	if err == nil {
+		return nil
+	}
+
+	return c.FromString(string(d))
+}
+
+func (c CertType) String() string {
+	if str, ok := CertTypeValueToName[c]; ok {
+		return str
+	}
+	return "CertType(0x" + strconv.FormatUint(uint64(c), 16) + ")"
+}
+
+func (c *CertType) FromString(s string) error {
+	v, ok := CertTypeNameToValue[s]
+	if ok {
+		*c = v
+		return nil
+	}
+
+	ss := strings.TrimPrefix(s, "CertType(0x")
+	ss = strings.TrimSuffix(ss, ")")
+	vv, err := strconv.ParseUint(ss, 16, 64)
+	if err != nil {
+		return fmt.Errorf("invalid CertType %q", s)
+	}
+
+	*c = CertType(vv)
 	return nil
 }
 
