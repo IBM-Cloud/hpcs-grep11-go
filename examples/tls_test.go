@@ -14,20 +14,75 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/big"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/IBM-Cloud/hpcs-grep11-go/ep11"
-	pb "github.com/IBM-Cloud/hpcs-grep11-go/grpc"
-	"github.com/IBM-Cloud/hpcs-grep11-go/util"
-	grpc "google.golang.org/grpc"
+	"github.com/IBM-Cloud/hpcs-grep11-go/v2/pkg/ep11"
+	pb "github.com/IBM-Cloud/hpcs-grep11-go/v2/pkg/grpc"
+	"github.com/IBM-Cloud/hpcs-grep11-go/v2/pkg/util"
 )
 
-// generateECDSAKeyPair generates a 256 bit ECDSA key pair
-func generateECDSAKeyPair(cryptoClient pb.CryptoClient) ([]byte, []byte, error) {
+// Example_tls tests TLS communication between a client and server using a certificate and private key that are dynamically generated
+func Example_tls() {
+	cryptoClient, conn, err := util.GetCryptoClient(&ClientConfig)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+
+	privKeyBlob, spki, err := generateECDSAKeyPair(cryptoClient)
+	if err != nil {
+		panic(fmt.Errorf("Failed to generate ECDSA key pair: %s", err))
+	}
+
+	// Create signer and raw certificate to build up TLS certificate
+	priv, err := util.NewEP11Signer(cryptoClient, privKeyBlob, spki)
+	if err != nil {
+		panic(fmt.Errorf("NewEP11Signer error: %s\n", err))
+	}
+	certDER, err := createECDSASelfSignedCert(priv, "localhost")
+	if err != nil {
+		panic(fmt.Errorf("createECDSASelfSignedCert error: %s\n", err))
+	}
+	tlsCert := tls.Certificate{
+		Certificate: [][]byte{certDER},
+		PrivateKey:  priv,
+	}
+
+	// Create and start server thread
+	tlsCfg := &tls.Config{
+		Certificates: []tls.Certificate{tlsCert},
+		ClientAuth:   tls.NoClientCert,
+	}
+	lis, err := tls.Listen("tcp", ":0", tlsCfg)
+	if err != nil {
+		panic(fmt.Errorf("Failed to listen: %s\n", err))
+	}
+	httpServer := CreateServer(lis.Addr().String())
+
+	defer httpServer.Close()
+	go func() {
+		httpServer.Serve(lis)
+	}()
+
+	// Create TLS client
+	client := newHTTPTestClient(certDER)
+	strResp, err := ping(client, lis.Addr().String())
+	if err != nil {
+		panic(fmt.Errorf("Ping failed: %s\n", err))
+	} else {
+		fmt.Printf("Response data from https server: [%s]\n", strResp)
+	}
+
+	// Output:
+	// Response data from https server: [Hello]
+}
+
+// generateECDSAKeyPair generates a 256-bit ECDSA key pair
+func generateECDSAKeyPair(cryptoClient pb.CryptoClient) (*pb.KeyBlob, *pb.KeyBlob, error) {
 	ecParameters, err := asn1.Marshal(util.OIDNamedCurveP256)
 	if err != nil {
 		return nil, nil, fmt.Errorf("Unable to encode parameter OID: %s", err)
@@ -51,10 +106,10 @@ func generateECDSAKeyPair(cryptoClient pb.CryptoClient) ([]byte, []byte, error) 
 	if err != nil {
 		return nil, nil, fmt.Errorf("Generate ECDSA key pair error: %s", err)
 	}
-	return ecKeypairResponse.PrivKeyBytes, ecKeypairResponse.PubKeyBytes, nil
+	return ecKeypairResponse.PrivKey, ecKeypairResponse.PubKey, nil
 }
 
-func createECDSASelfSignedCert(privKey *util.EP11PrivateKey, commonName string, sigAlg x509.SignatureAlgorithm) ([]byte, error) {
+func createECDSASelfSignedCert(privKey *util.EP11PrivateKey, commonName string) ([]byte, error) {
 	template := x509.Certificate{
 		SerialNumber: big.NewInt(123456789),
 		Subject: pkix.Name{
@@ -72,7 +127,7 @@ func createECDSASelfSignedCert(privKey *util.EP11PrivateKey, commonName string, 
 	return certDERBytes, nil
 }
 
-// StartServer starts https server
+// StartServer starts an https server
 func CreateServer(listenAddr string) *http.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
@@ -122,73 +177,10 @@ func ping(client *http.Client, serverAddr string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Http client get failed: %s", err)
 	}
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
 		return "", fmt.Errorf("ioutil.ReadAll failed: %s", err)
 	}
 	return string(data), nil
-}
-
-// Example_tls tests TLS communication between a client and server using a certificate and private key that are dynamically generated
-func Example_tls() {
-	conn, err := grpc.Dial(Address, callOpts...)
-	if err != nil {
-		fmt.Printf("Could not connect to server: %s", err)
-		return
-	}
-	defer conn.Close()
-	cryptoClient := pb.NewCryptoClient(conn)
-	privKeyBlob, spki, err := generateECDSAKeyPair(cryptoClient)
-	if err != nil {
-		fmt.Printf("Failed to generate ECDSA key pair: %s", err)
-		return
-	}
-
-	// Create signer and raw certificate to build up TLS certificate
-	priv, err := util.NewEP11Signer(cryptoClient, privKeyBlob, spki)
-	if err != nil {
-		fmt.Printf("NewEP11Signer error: %s\n", err)
-		return
-	}
-	certDER, err := createECDSASelfSignedCert(priv, "localhost", x509.ECDSAWithSHA256)
-	if err != nil {
-		fmt.Printf("createECDSASelfSignedCert error: %s\n", err)
-		return
-	}
-	tlsCert := tls.Certificate{
-		Certificate: [][]byte{certDER},
-		PrivateKey:  priv,
-	}
-
-	// Create and start server thread
-	tlsCfg := &tls.Config{
-		Certificates: []tls.Certificate{tlsCert},
-		ClientAuth:   tls.NoClientCert,
-	}
-	lis, err := tls.Listen("tcp", ":0", tlsCfg)
-	if err != nil {
-		fmt.Printf("Failed to listen: %s\n", err)
-		return
-	}
-	httpServer := CreateServer(lis.Addr().String())
-
-	defer httpServer.Close()
-	go func() {
-		httpServer.Serve(lis)
-	}()
-
-	// Create TLS client
-	client := newHTTPTestClient(certDER)
-	strResp, err := ping(client, lis.Addr().String())
-	if err != nil {
-		fmt.Printf("Ping failed: %s\n", err)
-	} else {
-		fmt.Printf("Response data from https server: [%s]\n", strResp)
-	}
-
-	return
-
-	// Output:
-	// Response data from https server: [Hello]
 }

@@ -13,7 +13,7 @@ and open a browser to [http://localhost:6060/pkg/github.com/IBM-Cloud/hpcs-grep1
 
 # Code Examples
 
-Included in this repository are working examples written in Go. The examples show how to use the **IBM Cloud Hyper Protect Services offering** to accomplish the following operations:
+Included in this repository are working examples written in Go. The examples demonstrate how to use the **IBM Cloud Hyper Protect Services offering** to accomplish the following operations:
 
 * Key generation
 * Encrypt and decrypt
@@ -22,6 +22,13 @@ Included in this repository are working examples written in Go. The examples sho
 * Derive keys
 * Build message digest
 * Retrieve mechanism information
+* Generate random data
+
+In addition there are examples that demonstrate the use of **BIP32**, **SLIP10**, **BLS12-381**, **Kyber**,
+**Dilithium**, **Schnorr**, and **Edwards Curve**. 
+
+**NOTE: Depending on what type of IBM Crypto Expresss card is being used for your HPCS instance,
+the example code may skip tests.  This is documented in the example code.**
   
 ## Example setup and execution
 
@@ -30,54 +37,62 @@ Included in this repository are working examples written in Go. The examples sho
 2. Clone this repository into a local directory of your choice. Go modules are used for this
    repository, so there is no need to place the cloned repository in your `GOPATH`.
 
-3. Update the following information in the [examples/server_test.go](examples/server_test.go#L36-L38) file.  
+3. Prior to running the sample code, there are two environment variables that must be set to ensure that the connection is authorized:
 
-	*NOTE: This information can obtained by logging in to your IBM Cloud account and viewing your Hyper Protect Crypto Serverices instance and IAM information. See the [GREP11 API documentation](https://cloud.ibm.com/docs/services/hs-crypto?topic=hs-crypto-grep11-api-ref) for more information about GREP11*.
+    - **GREP11_ADDRESS** - The full Enterprise PKCS #11 endpoint URL. This can be obtained by navigating
+    to your HPCS instance's main page via the IBM Cloud UI, expanding the *Enterprise PKCS #11 endpoint URL*
+    section and copying either the *Public* or *Private* URL.  If the URL does not contain a port then append `:443`
+    to the Enterprise PKCS #11 endpoint URL.  Example: `7fc144ef-ed7c-4be1-9a35-748b40477dcd.ep11.hs-crypto.appdomain.cloud:443`
 
-	```Golang
-    // The following IBM Cloud HPCS service items need to be changed prior to running the sample program:
+    NOTE: The use of either the public or private endpoint is dependent on what network is being used to access the remote server
 
-    var (
-        Address        = "<grep11_server_address>:<port>"
-        APIKey         = "<ibm_cloud_apikey>"
-    )
-	```
+    - **GREP11_APIKEY** - An IAM API key associated with the HPCS instance being accessed.
+
+    Optionally, The values of the two environment variables listed above can be hardcoded in the `main.go` file. Replace the
+    values of the `ClientConfig.Address` and `ClientConfig.APIKey` variable fields with the values related to your HPCS instance.
 		
 
-4. From the `<path>/hpcs-grep11-go/examples` directory, execute the examples by issuing the command: `go test -v -run Example`
+4. From the `<path>/hpcs-grep11-go/examples` directory, execute the examples by issuing the command: `go test -v`.
 
 5. The sample program produces output similar to the following:
 
     ```
-    === RUN   Example_getMechanismInfo
-    --- PASS: Example_getMechanismInfo (1.87s)
-    === RUN   Example_generateGenericKey
-    --- PASS: Example_generateGenericKey (0.29s)
-    === RUN   Example_encryptAndDecryptUsingAES
-    --- PASS: Example_encryptAndDecryptUsingAES (0.80s)
-    === RUN   Example_digest
-    --- PASS: Example_digest (0.58s)
-    === RUN   Example_signAndVerifyUsingRSAKeyPair
-    --- PASS: Example_signAndVerifyUsingRSAKeyPair (0.54s)
-    === RUN   Example_signAndVerifyUsingDSAKeyPair
-    --- PASS: Example_signAndVerifyUsingDSAKeyPair (5.28s)
-    === RUN   Example_deriveKeyUsingDHKeyPair
-    --- PASS: Example_deriveKeyUsingDHKeyPair (3.42s)
-    === RUN   Example_signAndVerifyUsingECDSAKeyPair
-    --- PASS: Example_signAndVerifyUsingECDSAKeyPair (0.55s)
-    === RUN   Example_signAndVerifyToTestErrorHandling
-    --- PASS: Example_signAndVerifyToTestErrorHandling (1.89s)
-    === RUN   Example_wrapAndUnwrapKey
-    --- PASS: Example_wrapAndUnwrapKey (0.50s)
-    === RUN   Example_deriveKey
-    --- PASS: Example_deriveKey (0.65s)
+    .
+    .
+    .
+    === RUN   Example_signVerify_ECDSA_ESP
+    --- PASS: Example_signVerify_ECDSA_ESP (0.09s)
+    === RUN   Example_signVerify_ECDSA_PSP
+    --- PASS: Example_signVerify_ECDSA_PSP (0.09s)
+    === RUN   Example_signVerify_ECDSA_PMP
+    --- PASS: Example_signVerify_ECDSA_PMP (0.02s)
+    === RUN   Example_signVerify_TestErrorHandling
+    --- PASS: Example_signVerify_TestErrorHandling (0.02s)
+    === RUN   Example_slip10DeriveKey
+    --- PASS: Example_slip10DeriveKey (0.99s)
+    === RUN   Example_slip10CrossSignAndVerify
+    --- PASS: Example_slip10CrossSignAndVerify (0.20s)
     === RUN   Example_tls
-    --- PASS: Example_tls (0.39s)
+    --- PASS: Example_tls (0.02s)
+    === RUN   Example_wrapUnwrap_AESKey_WithRSA
+    --- PASS: Example_wrapUnwrap_AESKey_WithRSA (0.09s)
+    === RUN   Example_wrapUnwrap_AttributeBoundKey
+    --- PASS: Example_wrapUnwrap_AttributeBoundKey (0.07s)
+    === RUN   Example_importExport_AESKey
+    --- PASS: Example_importExport_AESKey (0.00s)
+    === RUN   Example_export_RSAPrivKey
+    --- PASS: Example_export_RSAPrivKey (0.18s)
+    === RUN   Example_export_ECPrivKey
+    --- PASS: Example_export_ECPrivKey (0.02s)
+    === RUN   Example_import_RSA_Keypair
+    --- PASS: Example_import_RSA_Keypair (2.63s)
+    === RUN   Example_import_EC_Keypair
+    --- PASS: Example_import_EC_Keypair (0.01s)
     PASS
-    ok      github.com/IBM-Cloud/hpcs-grep11-go/examples    17.450s
+    ok  	github.com/IBM-Cloud/hpcs-grep11-go/v2/examples	22.285s
     ```
 
-**NOTE:** By default the rewrapKeyBlob test is skipped.  This test acts as sample code that can be used to reencrypt your existing keys with a new HSM wrapping key.  See figure 8 on page 27 and page 37 in https://www.ibm.com/downloads/cas/WXRDPRAN for additional information on how existing keys can be reencrypted.  This operation requires coordination between the end-user and the **IBM Cloud Hyper Protect Crypto Services** instance's administrator(s).
+**NOTE:** By default the rewrapKeyBlob test is skipped. This test acts as sample code that can be used to reencrypt your existing keys with a new HSM wrapping key. See figure 8 on page 27 and page 37 in the "EP11 Principles of Operation" document for additional information on how existing keys can be reencrypted. Instructions on how to obtain a copy of the "EP11 Principles of Operation" document are listed in the [section below](#ep11-principles-of-operation). In order to run this test, there must be coordination between the end-user and the **IBM Cloud Hyper Protect Crypto Services** instance's administrator(s).
 
 ## General Function Call Workflow
 
@@ -100,3 +115,19 @@ For example, the *Encrypt* operation consists of *EncryptInit()*, *Encrypt()*, *
 The following diagram shows the three calling sequence flows that can be used for *Encrypt*, *Decrypt*, *Digest*, *Sign* and *Verify* operations:
 
 ![function work flow](func_workflow.svg)
+
+## EP11 Principles of Operation
+
+For those that would like to have a low-level understanding of EP11, the EP11 Principles of Operation are provided
+in the "Enterprise PKCS#11 (EP11) Library structure" pdf document.
+
+The following steps outline how to obtain a copy of this document:
+1. Go to https://www.ibm.com/resources/mrs/assets?source=ibm-zesp&lang=en_US. Use your IBMid and password to login.
+2. Click the "I agree" checkbox and then click "I Confirm".
+3. Click the "Download" link to the right of "IBM Z EP11 Support Program files".
+4. Select the directory where you would like the zip file to be downloaded and save.
+5. Unzip the support program zip file.
+6. "cd" to the the unzipped directory.
+7. Open the "ep11-structure.pdf" document to view the EP11 Principles of Operation
+
+There is a supplemental document called "ep11-wire.txt" that contains additional information on EP11.
