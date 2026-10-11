@@ -56,27 +56,29 @@ func (cr *IAMPerRPCCredentials) getToken(ctx context.Context) (err error) {
 		return nil
 	}
 
-	var req *http.Request
 	client := http.Client{}
 	requestBody := []byte("grant_type=urn:ibm:params:oauth:grant-type:apikey&apikey=" + cr.APIKey)
 
-	req, err = http.NewRequest("POST", cr.Endpoint+"/identity/token", bytes.NewBuffer(requestBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, cr.Endpoint+"/identity/token", bytes.NewBuffer(requestBody))
 	if err != nil {
 		return err
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req = req.WithContext(ctx)
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("IAM token request failed with status %d", resp.StatusCode)
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %s", err)
 	}
-	defer resp.Body.Close()
 
 	iamToken := struct {
 		AccessToken string `json:"access_token"`
