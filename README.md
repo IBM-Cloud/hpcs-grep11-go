@@ -1,133 +1,327 @@
-# Overview
+# hpcs-grep11-go
 
-This repository contains software used to connect and interact with the **IBM Cloud Hyper Protect Crypto Services**  offering. For more information regarding this service please review the [IBM Cloud Hyper Protect Services documentation](https://cloud.ibm.com/docs/services/hs-crypto?topic=hs-crypto-get-started). The contents of this repository use go modules, and therefore, this repository can be cloned into any local directory; there is no need to place it in your `GOPATH`.
+> Go client library for **IBM Cloud Hyper Protect Crypto Services (HPCS)** via the
+> **Enterprise PKCS #11 over gRPC (GREP11)** protocol.
 
-# Contents
+[![Go version](https://img.shields.io/badge/go-1.27.2-blue)](go.mod)
+[![Module](https://img.shields.io/badge/module-v2-orange)](go.mod)
 
-The contents of this repository are offered *as-is* and are subject to change at anytime.
+---
 
-For general information about "Enterprise PKCS #11 over gRPC" (GREP11), please see the official [documentation](https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-introduce-cloud-hsm#access-cloud-hsm-pkcs11)
+## Overview
 
-To view the documentation of the hpcs-grep11 Go module contained in this repository, type the command `godoc` (requires the installation of Go) from the cloned repository's main directory
-and open a browser to [http://localhost:6060/pkg/github.com/IBM-Cloud/hpcs-grep11-go/](http://localhost:6060/pkg/github.com/IBM-Cloud/hpcs-grep11-go/).  See step 1 in the [section below](#example-setup-and-execution) for instructions on how to install Go.
+This repository contains the official IBM Cloud Go SDK for interacting with HPCS
+using GREP11. It provides a generated gRPC/protobuf client for all Crypto service
+RPCs, IAM bearer-token lifecycle management, helper utilities for key templates and
+error handling, and a `crypto.Signer` adapter that lets HSM-backed keys work
+transparently in `crypto/tls`.
 
-# Code Examples
+For full IBM Cloud documentation see:
+- [Hyper Protect Crypto Services](https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-get-started)
+- [GREP11 API reference](https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-grep11-api-ref)
+- [EP11 cloud HSM overview](https://cloud.ibm.com/docs/hs-crypto?topic=hs-crypto-introduce-cloud-hsm#access-cloud-hsm-pkcs11)
 
-Included in this repository are working examples written in Go. The examples demonstrate how to use the **IBM Cloud Hyper Protect Services offering** to accomplish the following operations:
+For the full module specification see [`SPEC.md`](SPEC.md).
 
-* Key generation
-* Encrypt and decrypt
-* Sign and verify
-* Wrap and unwrap keys
-* Derive keys
-* Build message digest
-* Retrieve mechanism information
-* Generate random data
+---
 
-In addition there are examples that demonstrate the use of **BIP32**, **SLIP10**, **BLS12-381**, **Kyber**,
-**Dilithium**, **Schnorr**, and **Edwards Curve**. 
+## Architecture
 
-**NOTE: Depending on what type of IBM Crypto Expresss card is being used for your HPCS instance,
-the example code may skip tests.  This is documented in the example code.**
-  
-## Example setup and execution
+```
+ ┌───────────────────────────────────────┐
+ │        Your Go Application            │
+ └──────────────────┬────────────────────┘
+                    │
+       ┌────────────▼────────────┐
+       │        pkg/util         │
+       │  GetCryptoClient()      │
+       │  AttributeMap()         │
+       │  GetPubKey() / Convert()│
+       │  EP11PrivateKey (Signer)│
+       └──────┬──────────┬───────┘
+              │          │
+   ┌──────────▼──┐  ┌────▼──────────┐
+   │pkg/authorize│  │   pkg/grpc    │
+   │IAMPerRPC    │  │ CryptoClient  │
+   │Credentials  │  │ KeyBlob, etc. │
+   └──────┬──────┘  └──────┬────────┘
+          │ HTTPS           │ gRPC / TLS :443
+          ▼                 ▼
+    IBM Cloud IAM    IBM Cloud HPCS
+    /identity/token  EP11 HSM (CEX7/CEX8)
+```
 
-1. [Install Go](https://golang.org/doc/install).
+See [`arch_diagram.drawio`](arch_diagram.drawio) for the full interactive diagram
+(open with [draw.io](https://app.diagrams.net)).
 
-2. Clone this repository into a local directory of your choice. Go modules are used for this
-   repository, so there is no need to place the cloned repository in your `GOPATH`.
+---
 
-3. Prior to running the sample code, there are two environment variables that must be set to ensure that the connection is authorized:
+## Requirements
 
-    - **GREP11_ADDRESS** - The full Enterprise PKCS #11 endpoint URL. This can be obtained by navigating
-    to your HPCS instance's main page via the IBM Cloud UI, expanding the *Enterprise PKCS #11 endpoint URL*
-    section and copying either the *Public* or *Private* URL.  If the URL does not contain a port then append `:443`
-    to the Enterprise PKCS #11 endpoint URL.  Example: `7fc144ef-ed7c-4be1-9a35-748b40477dcd.ep11.hs-crypto.appdomain.cloud:443`
+| Requirement | Version |
+|---|---|
+| Go | **1.27.2** or later |
+| IBM Cloud HPCS instance | Any region |
+| IBM Cloud API key | With access to the HPCS instance |
 
-    NOTE: The use of either the public or private endpoint is dependent on what network is being used to access the remote server
+> **Note:** This repository uses Go modules. Clone it anywhere — no `GOPATH`
+> placement required.
 
-    - **GREP11_APIKEY** - An IAM API key associated with the HPCS instance being accessed.
+---
 
-    Optionally, The values of the two environment variables listed above can be hardcoded in the `main.go` file. Replace the
-    values of the `ClientConfig.Address` and `ClientConfig.APIKey` variable fields with the values related to your HPCS instance.
-		
+## Dependencies
 
-4. From the `<path>/hpcs-grep11-go/examples` directory, execute the examples by issuing the command: `go test -v`.
+| Module | Version | Purpose |
+|---|---|---|
+| `google.golang.org/grpc` | `v1.84.0` | gRPC transport |
+| `google.golang.org/protobuf` | `v1.36.12` | Protobuf runtime |
+| `github.com/golang/protobuf` | `v1.5.4` | Legacy proto wrapper (gogo compat) |
+| `github.com/gogo/protobuf` | `v1.3.2` | EP11 proto codegen |
+| `github.com/btcsuite/btcd/btcec/v2` | `v2.5.0` | secp256k1 / BIP32 / Schnorr |
+| `github.com/Zilliqa/gozilliqa-sdk/v3` | `v3.0.0-20230120` | BIP32 derivation helper |
 
-5. The sample program produces output similar to the following:
+---
 
-    ```
-    .
-    .
-    .
-    === RUN   Example_signVerify_ECDSA_ESP
-    --- PASS: Example_signVerify_ECDSA_ESP (0.09s)
-    === RUN   Example_signVerify_ECDSA_PSP
-    --- PASS: Example_signVerify_ECDSA_PSP (0.09s)
-    === RUN   Example_signVerify_ECDSA_PMP
-    --- PASS: Example_signVerify_ECDSA_PMP (0.02s)
-    === RUN   Example_signVerify_TestErrorHandling
-    --- PASS: Example_signVerify_TestErrorHandling (0.02s)
-    === RUN   Example_slip10DeriveKey
-    --- PASS: Example_slip10DeriveKey (0.99s)
-    === RUN   Example_slip10CrossSignAndVerify
-    --- PASS: Example_slip10CrossSignAndVerify (0.20s)
-    === RUN   Example_tls
-    --- PASS: Example_tls (0.02s)
-    === RUN   Example_wrapUnwrap_AESKey_WithRSA
-    --- PASS: Example_wrapUnwrap_AESKey_WithRSA (0.09s)
-    === RUN   Example_wrapUnwrap_AttributeBoundKey
-    --- PASS: Example_wrapUnwrap_AttributeBoundKey (0.07s)
-    === RUN   Example_importExport_AESKey
-    --- PASS: Example_importExport_AESKey (0.00s)
-    === RUN   Example_export_RSAPrivKey
-    --- PASS: Example_export_RSAPrivKey (0.18s)
-    === RUN   Example_export_ECPrivKey
-    --- PASS: Example_export_ECPrivKey (0.02s)
-    === RUN   Example_import_RSA_Keypair
-    --- PASS: Example_import_RSA_Keypair (2.63s)
-    === RUN   Example_import_EC_Keypair
-    --- PASS: Example_import_EC_Keypair (0.01s)
-    PASS
-    ok  	github.com/IBM-Cloud/hpcs-grep11-go/v2/examples	22.285s
-    ```
+## Packages
 
-**NOTE:** By default the rewrapKeyBlob test is skipped. This test acts as sample code that can be used to reencrypt your existing keys with a new HSM wrapping key. See figure 8 on page 27 and page 37 in the "EP11 Principles of Operation" document for additional information on how existing keys can be reencrypted. Instructions on how to obtain a copy of the "EP11 Principles of Operation" document are listed in the [section below](#ep11-principles-of-operation). In order to run this test, there must be coordination between the end-user and the **IBM Cloud Hyper Protect Crypto Services** instance's administrator(s).
+| Package | Description |
+|---|---|
+| [`pkg/util`](pkg/util/) | Core helpers: `GetCryptoClient`, `AttributeMap`, `GetPubKey`, `Convert`, `EP11PrivateKey` |
+| [`pkg/authorize`](pkg/authorize/) | IBM Cloud IAM token management (`IAMPerRPCCredentials`) |
+| [`pkg/ep11`](pkg/ep11/) | Generated PKCS #11 constants — `CKM_*`, `CKA_*`, `CKR_*` |
+| [`pkg/grpc`](pkg/grpc/) | Generated gRPC client & protobuf types |
+| [`examples`](examples/) | Runnable examples for every major operation |
+
+---
+
+## Quick Start
+
+### 1. Install Go
+
+[https://golang.org/doc/install](https://golang.org/doc/install)
+
+### 2. Clone
+
+```bash
+git clone https://github.com/IBM-Cloud/hpcs-grep11-go.git
+cd hpcs-grep11-go
+```
+
+### 3. Set environment variables
+
+```bash
+# Required — obtain from your HPCS instance page in IBM Cloud
+export GREP11_ADDRESS="<instance-id>.ep11.hs-crypto.appdomain.cloud:443"
+export GREP11_APIKEY="<your-ibm-cloud-api-key>"
+
+# Optional — override IAM endpoint (default: https://iam.cloud.ibm.com)
+export GREP11_IAMENDPOINT="https://iam.cloud.ibm.com"
+```
+
+> **Tip:** The `GREP11_ADDRESS` value is on your HPCS instance's main page in the
+> IBM Cloud UI under *Enterprise PKCS #11 endpoint URL*. If no port is shown,
+> append `:443`.
+
+### 4. Run the examples
+
+```bash
+cd examples
+go test -v -run Example_keygen_AES
+```
+
+To run **all** examples:
+
+```bash
+go test -v
+```
+
+### 5. Use as a library
+
+```go
+import (
+    "github.com/IBM-Cloud/hpcs-grep11-go/v2/pkg/util"
+    "github.com/IBM-Cloud/hpcs-grep11-go/v2/pkg/ep11"
+    pb "github.com/IBM-Cloud/hpcs-grep11-go/v2/pkg/grpc"
+    "github.com/IBM-Cloud/hpcs-grep11-go/v2/pkg/authorize"
+    "google.golang.org/grpc"
+    "google.golang.org/grpc/credentials"
+    "crypto/tls"
+)
+
+config := &util.ClientConfig{
+    Address:     os.Getenv("GREP11_ADDRESS"),
+    APIKey:      os.Getenv("GREP11_APIKEY"),
+    IAMEndpoint: "https://iam.cloud.ibm.com",
+    DialOpts: []grpc.DialOption{
+        grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{})),
+        grpc.WithPerRPCCredentials(&authorize.IAMPerRPCCredentials{
+            APIKey:   os.Getenv("GREP11_APIKEY"),
+            Endpoint: "https://iam.cloud.ibm.com",
+        }),
+    },
+}
+
+cryptoClient, conn, err := util.GetCryptoClient(config)
+if err != nil {
+    log.Fatal(err)
+}
+defer conn.Close()
+```
+
+---
+
+## Code Examples
+
+The [`examples/`](examples/) directory contains working test files for every major
+PKCS #11 operation group:
+
+| Category | File | Operations |
+|---|---|---|
+| Key generation | `keyGeneration_test.go` | Generic, AES, DES3, RSA, EC, BLS, Kyber, DH, DSA |
+| Encrypt / Decrypt | `encryptDecrypt_test.go` | AES, DES3, RSA (ESP / PSP / PMP) |
+| Sign / Verify | `signVerify_test.go` | HMAC, RSA, RSA-PSS, DSA, ECDSA |
+| Wrap / Unwrap | `wrapUnwrap_test.go` | AES-with-RSA, attribute-bound, import/export |
+| Key derivation | `derive_test.go` | ECDH |
+| Message digest | `digest_test.go` | SHA-1 / 224 / 256 / 384 / 512 |
+| Random data | `generateRandomBytes_test.go` | HSM TRNG |
+| Mechanism info | `mechanismInfo_test.go` | List & query |
+| Key rotation | `keyRotation_test.go` / `reencryptSingle_test.go` | ReencryptSingle |
+| BIP32 | `bip32_test.go` | HD key derivation |
+| SLIP10 | `slip10_test.go` | SLIP10 derivation |
+| Schnorr | `schnorr_test.go` | Schnorr sign & verify |
+| Ed25519 | `ed25519_test.go` | EdDSA |
+| BLS12-381 | `bls_test.go` | BLS sign & verify *(CEX7/CEX8 only)* |
+| Dilithium | `dilithium_test.go` | Post-quantum sign & verify *(CEX7/CEX8 only)* |
+| Kyber | `kyber_test.go` | KEM encap/decap *(CEX7/CEX8 only)* |
+| TLS / mTLS | `tls_test.go` | HSM-backed `crypto.Signer` in TLS certificate |
+
+---
 
 ## General Function Call Workflow
 
-GREP11 can perform encrypt, decrypt, digest, sign and verify operations. For each operation, there are a series of sub-operations or functions.  
+GREP11 supports three calling-sequence flows for Encrypt, Decrypt, Digest, Sign,
+and Verify:
 
-For example, the *Encrypt* operation consists of *EncryptInit()*, *Encrypt()*, *EncryptUpdate()*, *EncryptFinal()* and *EncryptSingle()* sub-operations.
+| Flow | Sub-operations | When to use |
+|---|---|---|
+| **ESP** — EP11 Single-Part | `*Single()` | Fewest round-trips; entire payload in one call |
+| **PSP** — PKCS#11 Single-Part | `Init()` → `*()` | Full payload known upfront |
+| **PMP** — PKCS#11 Multi-Part | `Init()` → `Update()` × N → `Final()` | Streaming / chunked data |
 
-#### GREP11 sub-operations for Encrypt:
-
-- *Encrypt***Init()** is used to initialize an operation and must be run prior to *Encrypt()*, *EncryptUpdate()*, or *EncryptFinal()* calls
-
-- *Encrypt()* is used to encrypt data without the need to perform *EncryptUpdate()* or *EncryptFinal()* sub-operations.
-
-- *Encrypt***Update()** is used to perform update operations as part of a multi-part operation
-
-- *Encrypt***Final()** is used to perform final operations as part of a multi-part operation
-
-- *Encrypt***Single()** is an IBM EP11 extension to the standard PKCS #11 specification and used to perform a single call without the need to use the **Init**, **Update**, and **Final** sub-operations
-
-The following diagram shows the three calling sequence flows that can be used for *Encrypt*, *Decrypt*, *Digest*, *Sign* and *Verify* operations:
+The following diagram illustrates all three flows:
 
 ![function work flow](func_workflow.svg)
 
+---
+
+## Error Handling
+
+Use `util.Convert()` to extract typed EP11 error information from gRPC errors:
+
+```go
+_, err := cryptoClient.VerifySingle(ctx, req)
+if ok, ep11Err := util.Convert(err); !ok {
+    switch ep11Err.Code {
+    case ep11.CKR_SIGNATURE_INVALID:
+        log.Println("Signature is invalid")
+    default:
+        log.Printf("EP11 error %d: %s (retry=%v)", ep11Err.Code, ep11Err.Detail, ep11Err.Retry)
+    }
+}
+```
+
+Error codes (`CKR_*`) are defined in [`pkg/ep11/header_consts.go`](pkg/ep11/header_consts.go).
+
+---
+
+## Local / Development Mode
+
+Set `GREP11_LOCAL` to any value to connect without TLS (useful when pointing at a
+local mock server):
+
+```bash
+GREP11_LOCAL=1 go test -v
+```
+
+This replaces TLS credentials with `insecure.NewCredentials()`.
+
+---
+
+## Regenerating gRPC Bindings
+
+The files in `pkg/grpc/` are generated from `protos/*.proto`. To regenerate:
+
+```bash
+# Requires: protoc, protoc-gen-gogofast
+make build-protos
+```
+
+---
+
 ## EP11 Principles of Operation
 
-For those that would like to have a low-level understanding of EP11, the EP11 Principles of Operation are provided
-in the "Enterprise PKCS#11 (EP11) Library structure" pdf document.
+For a low-level understanding of EP11:
 
-The following steps outline how to obtain a copy of this document:
-1. Go to https://www.ibm.com/resources/mrs/assets?source=ibm-zesp&lang=en_US. Use your IBMid and password to login.
-2. Click the "I agree" checkbox and then click "I Confirm".
-3. Click the "Download" link to the right of "IBM Z EP11 Support Program files".
-4. Select the directory where you would like the zip file to be downloaded and save.
-5. Unzip the support program zip file.
-6. "cd" to the the unzipped directory.
-7. Open the "ep11-structure.pdf" document to view the EP11 Principles of Operation
+1. Go to <https://www.ibm.com/resources/mrs/assets?source=ibm-zesp&lang=en_US> and log in with your IBMid.
+2. Accept the agreement.
+3. Download **"IBM Z EP11 Support Program files"**.
+4. Unzip and open `ep11-structure.pdf` — this is the EP11 Principles of Operation.
+5. `ep11-wire.txt` contains additional wire-protocol detail.
 
-There is a supplemental document called "ep11-wire.txt" that contains additional information on EP11.
+---
+
+## Key Blobs
+
+All key-creation operations return **EP11 key blobs** — opaque, HSM-encrypted
+byte sequences. Key points:
+
+- **Persist key blobs** (e.g., in a database) if they are needed after the current session.
+- **Private key blobs** are encrypted by the HSM master key and cannot be read outside the HSM.
+- **Public key blobs** are returned in SPKI DER format — use `util.GetPubKey()` to decode.
+- All non-creation operations (encrypt, sign, etc.) require the `KeyBlob` protobuf
+  message form, **not** the raw `bytes` fields.
+
+---
+
+## Sample Output
+
+```
+=== RUN   Example_keygen_AES
+--- PASS: Example_keygen_AES (0.04s)
+=== RUN   Example_signVerify_ECDSA_ESP
+--- PASS: Example_signVerify_ECDSA_ESP (0.09s)
+=== RUN   Example_signVerify_ECDSA_PSP
+--- PASS: Example_signVerify_ECDSA_PSP (0.09s)
+=== RUN   Example_slip10DeriveKey
+--- PASS: Example_slip10DeriveKey (0.99s)
+=== RUN   Example_tls
+--- PASS: Example_tls (0.02s)
+=== RUN   Example_wrapUnwrap_AESKey_WithRSA
+--- PASS: Example_wrapUnwrap_AESKey_WithRSA (0.09s)
+PASS
+ok  	github.com/IBM-Cloud/hpcs-grep11-go/v2/examples	22.285s
+```
+
+> **Note:** The `rewrapKeyBlob` test is skipped by default. See `SPEC.md` §13
+> Known Limitations for details.
+
+---
+
+## Local API Documentation
+
+```bash
+# Install godoc if not present
+go install golang.org/x/tools/cmd/godoc@latest
+
+# Serve docs
+godoc -http=:6060
+```
+
+Then open:
+[http://localhost:6060/pkg/github.com/IBM-Cloud/hpcs-grep11-go/](http://localhost:6060/pkg/github.com/IBM-Cloud/hpcs-grep11-go/)
+
+---
+
+## Contributing
+
+Contributions are welcome. Please open an issue or pull request on GitHub.

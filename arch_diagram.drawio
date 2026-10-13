@@ -1,0 +1,134 @@
+<mxfile host="app.diagrams.net" modified="2025-07-01T00:00:00.000Z" agent="hpcs-grep11-go" version="24.7.5" type="device"><diagram id="arch-main" name="GREP11 Architecture"><mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0"><root><mxCell id="0"/><mxCell id="1" parent="0"/>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- TITLE                                                        -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<mxCell id="title" value="hpcs-grep11-go — Architecture Overview" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;fontColor=#1F2328;" vertex="1" parent="1"><mxGeometry x="327" y="20" width="1000" height="40" as="geometry"/></mxCell>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- SWIM LANE: CALLER APPLICATION                               -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<mxCell id="lane-app" value="Caller Application" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="60" y="80" width="340" height="220" as="geometry"/></mxCell>
+
+<mxCell id="app-code" value="Your Go Application&#xa;(or test suite)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="lane-app"><mxGeometry x="60" y="60" width="220" height="60" as="geometry"/></mxCell>
+
+<mxCell id="env-vars" value="env vars&#xa;GREP11_ADDRESS&#xa;GREP11_APIKEY" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.general;fillColor=#E6F0FF;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="lane-app"><mxGeometry x="60" y="150" width="220" height="50" as="geometry"/></mxCell>
+<mxCell id="env-label" value="Environment Variables" style="text;html=1;align=center;fontSize=10;fontStyle=2;" vertex="1" parent="lane-app"><mxGeometry x="60" y="200" width="220" height="20" as="geometry"/></mxCell>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- SWIM LANE: SDK PACKAGES                                      -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<mxCell id="lane-sdk" value="hpcs-grep11-go SDK  (github.com/IBM-Cloud/hpcs-grep11-go/v2)" style="swimlane;startSize=30;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=13;fontColor=#333333;" vertex="1" parent="1"><mxGeometry x="440" y="80" width="800" height="560" as="geometry"/></mxCell>
+
+<!-- pkg/util -->
+<mxCell id="pkg-util" value="pkg/util" style="swimlane;startSize=25;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" vertex="1" parent="lane-sdk"><mxGeometry x="20" y="50" width="360" height="240" as="geometry"/></mxCell>
+<mxCell id="util-getclient" value="GetCryptoClient()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="pkg-util"><mxGeometry x="20" y="40" width="160" height="35" as="geometry"/></mxCell>
+<mxCell id="util-attrmap" value="AttributeMap()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="pkg-util"><mxGeometry x="190" y="40" width="150" height="35" as="geometry"/></mxCell>
+<mxCell id="util-getpubkey" value="GetPubKey()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="pkg-util"><mxGeometry x="20" y="90" width="160" height="35" as="geometry"/></mxCell>
+<mxCell id="util-convert" value="Convert() (errors)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="pkg-util"><mxGeometry x="190" y="90" width="150" height="35" as="geometry"/></mxCell>
+<mxCell id="util-generateiv" value="GenerateIV()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="pkg-util"><mxGeometry x="20" y="140" width="160" height="35" as="geometry"/></mxCell>
+<mxCell id="util-signer" value="EP11PrivateKey&#xa;(crypto.Signer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="pkg-util"><mxGeometry x="190" y="140" width="150" height="35" as="geometry"/></mxCell>
+<mxCell id="util-clientcfg" value="ClientConfig&#xa;{Address, APIKey, DialOpts}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="pkg-util"><mxGeometry x="20" y="190" width="320" height="35" as="geometry"/></mxCell>
+
+<!-- pkg/authorize -->
+<mxCell id="pkg-auth" value="pkg/authorize" style="swimlane;startSize=25;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" vertex="1" parent="lane-sdk"><mxGeometry x="400" y="50" width="380" height="240" as="geometry"/></mxCell>
+<mxCell id="auth-type" value="IAMPerRPCCredentials" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;fontStyle=1;" vertex="1" parent="pkg-auth"><mxGeometry x="20" y="40" width="340" height="30" as="geometry"/></mxCell>
+<mxCell id="auth-fields" value="Fields: APIKey | Endpoint | AccessToken | expiration | updateLock" style="text;html=1;align=left;fontSize=10;fillColor=#f9f9f9;strokeColor=#d5e8d4;" vertex="1" parent="pkg-auth"><mxGeometry x="20" y="75" width="340" height="40" as="geometry"/></mxCell>
+<mxCell id="auth-grm" value="GetRequestMetadata()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="pkg-auth"><mxGeometry x="20" y="125" width="160" height="35" as="geometry"/></mxCell>
+<mxCell id="auth-rts" value="RequireTransportSecurity()&#xa;→ true (always)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="pkg-auth"><mxGeometry x="190" y="125" width="170" height="35" as="geometry"/></mxCell>
+<mxCell id="auth-gettoken" value="getToken() [private]&#xa;• HTTP POST /identity/token&#xa;• Validates HTTP 200&#xa;• Thread-safe refresh" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;" vertex="1" parent="pkg-auth"><mxGeometry x="20" y="170" width="340" height="55" as="geometry"/></mxCell>
+
+<!-- pkg/ep11 -->
+<mxCell id="pkg-ep11" value="pkg/ep11" style="swimlane;startSize=25;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;" vertex="1" parent="lane-sdk"><mxGeometry x="20" y="310" width="360" height="160" as="geometry"/></mxCell>
+<mxCell id="ep11-ckm" value="CKM_* constants&#xa;(Mechanisms)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="pkg-ep11"><mxGeometry x="20" y="40" width="150" height="45" as="geometry"/></mxCell>
+<mxCell id="ep11-cka" value="CKA_* constants&#xa;(Attributes)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="pkg-ep11"><mxGeometry x="190" y="40" width="150" height="45" as="geometry"/></mxCell>
+<mxCell id="ep11-ckr" value="CKR_* return codes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="pkg-ep11"><mxGeometry x="20" y="100" width="150" height="40" as="geometry"/></mxCell>
+<mxCell id="ep11-attrs" value="EP11Attributes type" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="pkg-ep11"><mxGeometry x="190" y="100" width="150" height="40" as="geometry"/></mxCell>
+
+<!-- pkg/grpc -->
+<mxCell id="pkg-grpc" value="pkg/grpc  (generated from protos/)" style="swimlane;startSize=25;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;fontStyle=1;" vertex="1" parent="lane-sdk"><mxGeometry x="400" y="310" width="380" height="230" as="geometry"/></mxCell>
+<mxCell id="grpc-client" value="CryptoClient interface&#xa;(50+ RPCs)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;" vertex="1" parent="pkg-grpc"><mxGeometry x="20" y="35" width="340" height="35" as="geometry"/></mxCell>
+<mxCell id="grpc-keyblob" value="KeyBlob" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="pkg-grpc"><mxGeometry x="20" y="82" width="100" height="35" as="geometry"/></mxCell>
+<mxCell id="grpc-mech" value="Mechanism" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="pkg-grpc"><mxGeometry x="130" y="82" width="100" height="35" as="geometry"/></mxCell>
+<mxCell id="grpc-err" value="Grep11Error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="pkg-grpc"><mxGeometry x="240" y="82" width="120" height="35" as="geometry"/></mxCell>
+<mxCell id="grpc-rsaoaep" value="RSAOAEPParm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="pkg-grpc"><mxGeometry x="20" y="130" width="100" height="30" as="geometry"/></mxCell>
+<mxCell id="grpc-rsapss" value="RSAPSSParm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="pkg-grpc"><mxGeometry x="130" y="130" width="100" height="30" as="geometry"/></mxCell>
+<mxCell id="grpc-ecdh" value="ECDH1DeriveParm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="pkg-grpc"><mxGeometry x="240" y="130" width="120" height="30" as="geometry"/></mxCell>
+<mxCell id="grpc-btc" value="BTCDeriveParm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="pkg-grpc"><mxGeometry x="20" y="170" width="100" height="30" as="geometry"/></mxCell>
+<mxCell id="grpc-ecsg" value="ECSGParm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="pkg-grpc"><mxGeometry x="130" y="170" width="100" height="30" as="geometry"/></mxCell>
+<mxCell id="grpc-kyber" value="KyberKEMParm" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="pkg-grpc"><mxGeometry x="240" y="170" width="120" height="30" as="geometry"/></mxCell>
+
+<!-- examples note -->
+<mxCell id="examples-box" value="examples/&#xa;(runnable *_test.go files)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;fontStyle=2;" vertex="1" parent="lane-sdk"><mxGeometry x="20" y="490" width="760" height="50" as="geometry"/></mxCell>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- IBM IAM                                                      -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<mxCell id="iam-box" value="IBM Cloud IAM&#xa;iam.cloud.ibm.com&#xa;POST /identity/token" style="shape=mxgraph.cisco.servers.standard_server;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;pointerEvents=1;" vertex="1" parent="1"><mxGeometry x="440" y="710" width="160" height="120" as="geometry"/></mxCell>
+<mxCell id="iam-label" value="IBM Cloud IAM&#xa;iam.cloud.ibm.com&#xa;POST /identity/token" style="text;html=1;align=center;fontSize=11;" vertex="1" parent="1"><mxGeometry x="420" y="830" width="200" height="50" as="geometry"/></mxCell>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- HPCS                                                         -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<mxCell id="hpcs-outer" value="IBM Cloud HPCS Instance" style="swimlane;startSize=30;fillColor=#1F2328;strokeColor=#1F2328;fontColor=#ffffff;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="1000" y="200" width="580" height="440" as="geometry"/></mxCell>
+
+<mxCell id="hpcs-ep11-server" value="GREP11 gRPC Server&#xa;(EP11 over gRPC)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#3b82d4;strokeColor=#2d6ab8;fontColor=#ffffff;fontSize=12;fontStyle=1;" vertex="1" parent="hpcs-outer"><mxGeometry x="40" y="50" width="500" height="60" as="geometry"/></mxCell>
+
+<mxCell id="hpcs-pkcs11" value="PKCS #11 v2.40 Layer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#3d3d3d;strokeColor=#5a5a5a;fontColor=#cccccc;fontSize=11;" vertex="1" parent="hpcs-outer"><mxGeometry x="40" y="140" width="220" height="50" as="geometry"/></mxCell>
+<mxCell id="hpcs-ep11" value="EP11 Library" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#3d3d3d;strokeColor=#5a5a5a;fontColor=#cccccc;fontSize=11;" vertex="1" parent="hpcs-outer"><mxGeometry x="280" y="140" width="220" height="50" as="geometry"/></mxCell>
+
+<mxCell id="hpcs-cex" value="IBM Crypto Express HSM" style="shape=mxgraph.cisco.servers.standard_server;fillColor=#5a5a5a;strokeColor=#888888;fontColor=#ffffff;fontSize=11;fontStyle=1;" vertex="1" parent="hpcs-outer"><mxGeometry x="120" y="230" width="100" height="80" as="geometry"/></mxCell>
+<mxCell id="hpcs-cex-label" value="IBM Crypto Express&#xa;CEX7 / CEX8" style="text;html=1;align=center;fontSize=10;fontColor=#cccccc;" vertex="1" parent="hpcs-outer"><mxGeometry x="80" y="315" width="180" height="30" as="geometry"/></mxCell>
+
+<mxCell id="hpcs-master" value="Master Wrapping Key&#xa;(never leaves HSM)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6c3483;strokeColor=#4a2462;fontColor=#ffffff;fontSize=10;" vertex="1" parent="hpcs-outer"><mxGeometry x="320" y="260" width="200" height="50" as="geometry"/></mxCell>
+
+<mxCell id="hpcs-tls" value="TLS 1.2+  Port 443" style="text;html=1;align=center;fontSize=11;fontColor=#aaaaaa;fontStyle=2;" vertex="1" parent="hpcs-outer"><mxGeometry x="140" y="370" width="300" height="30" as="geometry"/></mxCell>
+<mxCell id="hpcs-ops" value="Operations: GenerateKey/Pair · Encrypt/Decrypt · Sign/Verify&#xa;Wrap/Unwrap · Derive · Digest · GenerateRandom · ReencryptSingle" style="text;html=1;align=center;fontSize=10;fontColor=#aaaaaa;" vertex="1" parent="hpcs-outer"><mxGeometry x="20" y="400" width="540" height="30" as="geometry"/></mxCell>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- CONNECTIONS                                                  -->
+<!-- ════════════════════════════════════════════════════════════ -->
+
+<!-- App → util -->
+<mxCell id="e-app-util" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#6c8ebf;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" source="app-code" target="util-getclient" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e-app-util-lbl" value="calls" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=10;" vertex="1" connectable="0" parent="e-app-util"><mxGeometry relative="0.5" as="geometry"/></mxCell>
+
+<!-- util → auth -->
+<mxCell id="e-util-auth" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#82b366;strokeWidth=2;" edge="1" source="util-getclient" target="auth-grm" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e-util-auth-lbl" value="grpc.PerRPCCredentials" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=10;" vertex="1" connectable="0" parent="e-util-auth"><mxGeometry relative="0.5" as="geometry"/></mxCell>
+
+<!-- util → ep11 -->
+<mxCell id="e-util-ep11" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;strokeWidth=2;" edge="1" source="util-attrmap" target="ep11-cka" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+<!-- util → grpc -->
+<mxCell id="e-util-grpc" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#b85450;strokeWidth=2;" edge="1" source="util-getclient" target="grpc-client" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e-util-grpc-lbl" value="returns CryptoClient" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=10;" vertex="1" connectable="0" parent="e-util-grpc"><mxGeometry relative="0.5" as="geometry"/></mxCell>
+
+<!-- auth → IAM -->
+<mxCell id="e-auth-iam" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#6c8ebf;strokeWidth=2;dashed=1;" edge="1" source="auth-gettoken" target="iam-box" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e-auth-iam-lbl" value="HTTPS POST /identity/token&#xa;grant_type=apikey" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=10;" vertex="1" connectable="0" parent="e-auth-iam"><mxGeometry relative="0.5" as="geometry"/></mxCell>
+
+<!-- grpc → HPCS -->
+<mxCell id="e-grpc-hpcs" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#3b82d4;strokeWidth=3;" edge="1" source="grpc-client" target="hpcs-ep11-server" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e-grpc-hpcs-lbl" value="gRPC / TLS 1.2+  :443&#xa;Authorization: Bearer &lt;token&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=11;fontStyle=1;" vertex="1" connectable="0" parent="e-grpc-hpcs"><mxGeometry relative="0.5" as="geometry"/></mxCell>
+
+<!-- HPCS internal -->
+<mxCell id="e-server-pkcs" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#aaaaaa;strokeWidth=1;" edge="1" source="hpcs-ep11-server" target="hpcs-pkcs11" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e-server-ep11" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#aaaaaa;strokeWidth=1;" edge="1" source="hpcs-ep11-server" target="hpcs-ep11" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e-pkcs-cex" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#aaaaaa;strokeWidth=1;" edge="1" source="hpcs-pkcs11" target="hpcs-cex" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e-ep11-key" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#6c3483;strokeWidth=1;" edge="1" source="hpcs-ep11" target="hpcs-master" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- LEGEND                                                       -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<mxCell id="legend" value="Legend" style="swimlane;startSize=25;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;fontSize=12;" vertex="1" parent="1"><mxGeometry x="60" y="710" width="340" height="170" as="geometry"/></mxCell>
+<mxCell id="leg1" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#6c8ebf;strokeWidth=2;" edge="1" parent="legend"><mxGeometry x="20" y="45" width="80" height="10" relative="1" as="geometry"><mxPoint x="20" y="45" as="sourcePoint"/><mxPoint x="100" y="45" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="leg1-lbl" value="Function call / import" style="text;html=1;fontSize=11;" vertex="1" parent="legend"><mxGeometry x="110" y="38" width="200" height="20" as="geometry"/></mxCell>
+<mxCell id="leg2" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#3b82d4;strokeWidth=3;" edge="1" parent="legend"><mxGeometry x="20" y="75" width="80" height="10" relative="1" as="geometry"><mxPoint x="20" y="75" as="sourcePoint"/><mxPoint x="100" y="75" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="leg2-lbl" value="gRPC / TLS transport" style="text;html=1;fontSize=11;" vertex="1" parent="legend"><mxGeometry x="110" y="68" width="200" height="20" as="geometry"/></mxCell>
+<mxCell id="leg3" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#6c8ebf;strokeWidth=2;dashed=1;" edge="1" parent="legend"><mxGeometry x="20" y="105" width="80" height="10" relative="1" as="geometry"><mxPoint x="20" y="105" as="sourcePoint"/><mxPoint x="100" y="105" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="leg3-lbl" value="HTTPS token request" style="text;html=1;fontSize=11;" vertex="1" parent="legend"><mxGeometry x="110" y="98" width="200" height="20" as="geometry"/></mxCell>
+<mxCell id="leg4" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#9673a6;strokeWidth=2;" edge="1" parent="legend"><mxGeometry x="20" y="135" width="80" height="10" relative="1" as="geometry"><mxPoint x="20" y="135" as="sourcePoint"/><mxPoint x="100" y="135" as="targetPoint"/></mxGeometry></mxCell>
+<mxCell id="leg4-lbl" value="Constant / type reference" style="text;html=1;fontSize=11;" vertex="1" parent="legend"><mxGeometry x="110" y="128" width="200" height="20" as="geometry"/></mxCell>
+
+</root></mxGraphModel></diagram></mxfile>

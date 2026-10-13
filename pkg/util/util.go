@@ -25,7 +25,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/IBM-Cloud/hpcs-grep11-go/v2/pkg/ep11"
 	pb "github.com/IBM-Cloud/hpcs-grep11-go/v2/pkg/grpc"
@@ -34,7 +33,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var lock sync.RWMutex
 var (
 	// The following variables are standardized elliptic curve definitions
 	OIDNamedCurveP224      = asn1.ObjectIdentifier{1, 3, 132, 0, 33}
@@ -208,7 +206,9 @@ func AttributeValue(v interface{}) *pb.AttributeValue {
 		return &pb.AttributeValue{OneAttr: &pb.AttributeValue_AttributeI{AttributeI: int64(val.Uint())}}
 	default:
 		buf := new(bytes.Buffer)
-		binary.Write(buf, binary.BigEndian, val)
+		if err := binary.Write(buf, binary.BigEndian, val); err != nil {
+			return &pb.AttributeValue{}
+		}
 		return &pb.AttributeValue{OneAttr: &pb.AttributeValue_AttributeB{AttributeB: buf.Bytes()}}
 	}
 }
@@ -369,16 +369,14 @@ func GetECPointFromSPKI(spki []byte) ([]byte, error) {
 // Pause is a helper function that pauses test execution until the user types CTRL-c
 func Pause(m chan string, sigs chan os.Signal, message string) {
 	os.Stderr.WriteString("\n" + message + "\n")
-loop:
 	for {
 		select {
 		case <-sigs:
 			fmt.Println("")
-			break loop
+			return
 		case <-m:
 		}
 	}
-	return
 }
 
 // ClientConfig is used to setup a gRPC connection with a remote GREP11 server
@@ -391,7 +389,7 @@ type ClientConfig struct {
 
 // GetCryptoClient connects to the GREP11 server and returns a gRPC Crypto service client
 func GetCryptoClient(config *ClientConfig) (pb.CryptoClient, *grpc.ClientConn, error) {
-	conn, err := grpc.Dial(config.Address, config.DialOpts...)
+	conn, err := grpc.NewClient(config.Address, config.DialOpts...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not connect to server: %s", err)
 	}

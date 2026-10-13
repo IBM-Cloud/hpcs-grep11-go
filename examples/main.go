@@ -12,8 +12,9 @@ import (
 
 	"github.com/IBM-Cloud/hpcs-grep11-go/v2/pkg/authorize"
 	"github.com/IBM-Cloud/hpcs-grep11-go/v2/pkg/util"
-	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
@@ -51,8 +52,7 @@ func init() {
 
 	if _, exists := os.LookupEnv("GREP11_LOCAL"); exists {
 		ClientConfig.DialOpts = []grpc.DialOption{
-			grpc.WithInsecure(),
-			grpc.WithBlock(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		}
 	}
 }
